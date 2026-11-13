@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { formatINR } from '../utils/formatters';
 
 export const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -113,7 +114,7 @@ export const ProfilePage: React.FC = () => {
               </span>
               <h3 className="text-2xl font-black text-white tracking-tight">{user?.name}</h3>
               <p className="text-xs text-slate-300">
-                {user?.department} • ID: <span className="font-mono">{user?.studentId || 'FACULTY'}</span>
+                {user?.department} • Roll No / USN: <span className="font-mono text-sky-300 font-bold">{user?.studentId || '1NI22CS045'}</span>
               </p>
             </div>
 
@@ -124,7 +125,9 @@ export const ProfilePage: React.FC = () => {
               <p className="text-base font-mono font-extrabold text-sky-300">
                 {user?.libraryCardNumber || 'LIB-2026-ACTIVE'}
               </p>
-              <p className="text-[11px] text-slate-400">{user?.yearOfStudy || 'Undergraduate'}</p>
+              <p className="text-[11px] text-slate-300 font-medium">
+                Dues: <span className={(user?.fineAmount || 0) > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>{formatINR(user?.fineAmount || 0)}</span>
+              </p>
             </div>
           </div>
 
@@ -175,7 +178,7 @@ export const ProfilePage: React.FC = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210"
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-sky-500"
                 />
               </div>

@@ -60,21 +60,21 @@ export const Footer: React.FC = () => {
                 <Clock className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="block font-medium text-slate-200">Mon - Fri:</span>
-                  <span>08:00 AM – 10:00 PM</span>
+                  <span>08:00 AM – 10:00 PM IST</span>
                 </div>
               </li>
               <li className="flex items-start space-x-2">
                 <Clock className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="block font-medium text-slate-200">Saturday:</span>
-                  <span>09:00 AM – 08:00 PM</span>
+                  <span>09:00 AM – 08:00 PM IST</span>
                 </div>
               </li>
               <li className="flex items-start space-x-2">
                 <Clock className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="block font-medium text-slate-200">Sunday:</span>
-                  <span>10:00 AM – 06:00 PM</span>
+                  <span>10:00 AM – 06:00 PM IST</span>
                 </div>
               </li>
             </ul>
@@ -86,15 +86,15 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>Central Campus Library, Level 1</span>
+                <span>Central Campus Library, Main Academic Block</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>library-support@seatsync.edu</span>
+                <span>library-helpdesk@seatsync.ac.in</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>+1 (555) 019-4829</span>
+                <span>+91 80 2345 6789</span>
               </li>
             </ul>
           </div>

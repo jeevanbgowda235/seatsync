@@ -14,6 +14,7 @@ import {
 import api from '../api/client';
 import { Book, BookCategory } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { formatINR, getFallbackBookCover } from '../utils/formatters';
 
 export const BookCataloguePage: React.FC = () => {
   const { user } = useAuth();
@@ -232,6 +233,10 @@ export const BookCataloguePage: React.FC = () => {
                     <img
                       src={book.coverImage}
                       alt={book.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getFallbackBookCover(book.title, book.category?.name);
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-3 left-3">
@@ -343,6 +348,10 @@ export const BookCataloguePage: React.FC = () => {
               <img
                 src={borrowModalBook.coverImage}
                 alt={borrowModalBook.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = getFallbackBookCover(borrowModalBook.title, borrowModalBook.category?.name);
+                }}
                 className="w-16 h-24 object-cover rounded-xl shadow-soft-sm shrink-0"
               />
               <div className="space-y-1">
@@ -360,7 +369,7 @@ export const BookCataloguePage: React.FC = () => {
               <ul className="list-disc pl-4 space-y-1 text-slate-500">
                 <li>Loan period: <strong>14 Days</strong> from circulation desk pickup.</li>
                 <li>Staff approval required before book collection.</li>
-                <li>Late returns incur a penalty fee of $2.00 per overdue day.</li>
+                <li>Late returns incur a penalty fee of ₹5.00 per overdue day.</li>
               </ul>
             </div>
 

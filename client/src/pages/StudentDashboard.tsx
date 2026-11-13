@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import StatsCard from '../components/StatsCard';
 import api from '../api/client';
 import { Reservation, BorrowingRecord } from '../types';
+import { formatINR, formatIndianDate, getFallbackBookCover } from '../utils/formatters';
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -150,7 +151,7 @@ export const StudentDashboard: React.FC = () => {
           />
           <StatsCard
             title="Outstanding Fines"
-            value={`$${(user?.fineAmount || 0).toFixed(2)}`}
+            value={formatINR(user?.fineAmount || 0)}
             subtitle={user?.fineAmount ? 'Please settle at circulation desk' : 'Account in good standing'}
             icon={DollarSign}
             colorScheme={user?.fineAmount ? 'rose' : 'emerald'}
@@ -178,7 +179,7 @@ export const StudentDashboard: React.FC = () => {
                   Floor {nextReservation.seat.floor} — {nextReservation.seat.section}
                 </h3>
                 <p className="text-xs text-slate-600 flex items-center space-x-3">
-                  <span>📅 Date: {nextReservation.date}</span>
+                  <span>📅 Date: {formatIndianDate(nextReservation.date)}</span>
                   <span>⏰ Time: {nextReservation.startTime} – {nextReservation.endTime}</span>
                   <span className={`font-semibold ${nextReservation.status === 'CHECKED_IN' ? 'text-emerald-600' : 'text-blue-600'}`}>
                     • {nextReservation.status}
@@ -248,6 +249,10 @@ export const StudentDashboard: React.FC = () => {
                       <img
                         src={record.book.coverImage}
                         alt={record.book.title}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getFallbackBookCover(record.book.title);
+                        }}
                         className="w-12 h-16 object-cover rounded-lg shadow-soft-sm shrink-0"
                       />
                       <div className="space-y-0.5">

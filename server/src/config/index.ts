@@ -114,10 +114,10 @@ export const config = {
   adminInitialPassword: process.env.ADMIN_INITIAL_PASSWORD,
   seedDemoData: process.env.SEED_DEMO_DATA === 'true' || !isProduction,
   libraryConfig: {
-    openingHour: 8, // 08:00 AM
-    closingHour: 22, // 10:00 PM
+    openingHour: 8, // 08:00 AM IST
+    closingHour: 22, // 10:00 PM IST
     defaultLoanDays: 14,
-    finePerDay: 2.0, // $2.00 or local currency equivalent
+    finePerDay: 5.0, // ₹5.00 per day (Standard Indian University Library fine)
     maxBorrowLimit: 3
   }
 };

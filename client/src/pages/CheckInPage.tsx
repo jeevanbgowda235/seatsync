@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import confetti from 'canvas-confetti';
+import { formatIndianDate, formatIndianDateTime } from '../utils/formatters';
 
 export const CheckInPage: React.FC = () => {
   const [reservationCode, setReservationCode] = useState('');
@@ -89,10 +90,10 @@ export const CheckInPage: React.FC = () => {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 text-left space-y-1.5">
                 <p>🪑 <strong>Seat:</strong> {result.seat?.seatNumber || 'Confirmed Desk'}</p>
                 <p>📍 <strong>Location:</strong> Floor {result.seat?.floor || 1} ({result.seat?.section || 'Reading Area'})</p>
-                <p>📅 <strong>Date:</strong> {result.date}</p>
+                <p>📅 <strong>Date:</strong> {formatIndianDate(result.date)}</p>
                 <p>⏰ <strong>Time:</strong> {result.startTime} – {result.endTime}</p>
                 <p className="text-emerald-600 font-semibold pt-1">
-                  ✓ Recorded at {new Date().toLocaleTimeString()}
+                  ✓ Recorded at {formatIndianDateTime(new Date())}
                 </p>
               </div>
 

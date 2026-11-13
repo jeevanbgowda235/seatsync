@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { AdminStats } from '../types';
+import { formatIndianDate } from '../utils/formatters';
 
 export const AdminReportsPage: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -81,7 +82,7 @@ export const AdminReportsPage: React.FC = () => {
               </div>
             </div>
             <div className="text-right text-xs text-slate-500">
-              <p>Generated: <strong>{new Date().toLocaleDateString()}</strong></p>
+              <p>Generated: <strong>{formatIndianDate(new Date())}</strong></p>
               <p>Status: <span className="text-emerald-600 font-bold">Verified Production</span></p>
             </div>
           </div>
@@ -174,7 +175,7 @@ export const AdminReportsPage: React.FC = () => {
           {/* Signoff */}
           <div className="pt-8 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
             <div>
-              <p>Audit Verification Sign-Off: <strong>Dr. Eleanor Vance, Chief Librarian</strong></p>
+              <p>Audit Verification Sign-Off: <strong>Dr. Rajesh Kumar, Chief Librarian</strong></p>
               <p className="text-[10px]">SeatSync Database Integrity Protocol • ACID Compliant</p>
             </div>
             <div className="text-right">

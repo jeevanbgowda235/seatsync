@@ -88,7 +88,7 @@ export const RegisterPage: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Jordan Hayes"
+                  placeholder="e.g. Aarav Sharma"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
                 />
               </div>
@@ -96,7 +96,7 @@ export const RegisterPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">University Email</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">College / University Email</label>
                 <div className="relative rounded-xl shadow-soft-sm">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <Mail className="w-4 h-4" />
@@ -106,14 +106,14 @@ export const RegisterPage: React.FC = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="jordan@university.edu"
+                    placeholder="aarav.sharma@college.edu.in"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Student ID</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Roll No / USN</label>
                 <div className="relative rounded-xl shadow-soft-sm">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <IdCard className="w-4 h-4" />
@@ -123,7 +123,7 @@ export const RegisterPage: React.FC = () => {
                     required
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    placeholder="STU-2024-089"
+                    placeholder="1NI22CS045"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
                   />
                 </div>
@@ -138,13 +138,14 @@ export const RegisterPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
                 >
-                  <option value="Computer Science">Computer Science</option>
-                  <option value="Software Engineering">Software Engineering</option>
-                  <option value="Data Science & AI">Data Science & AI</option>
-                  <option value="Cybersecurity">Cybersecurity</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Electrical Engineering">Electrical Engineering</option>
-                  <option value="Business & Finance">Business & Finance</option>
+                  <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                  <option value="Information Science & Engineering">Information Science & Engineering (ISE)</option>
+                  <option value="Artificial Intelligence & ML">Artificial Intelligence & ML (AIML)</option>
+                  <option value="Data Science & Analytics">Data Science & Analytics</option>
+                  <option value="Electronics & Communication">Electronics & Communication (ECE)</option>
+                  <option value="Electrical & Electronics">Electrical & Electronics (EEE)</option>
+                  <option value="Mechanical Engineering">Mechanical Engineering</option>
+                  <option value="Management Studies">Management Studies (MBA/BBA)</option>
                 </select>
               </div>
 
@@ -155,12 +156,12 @@ export const RegisterPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, yearOfStudy: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
                 >
-                  <option value="1st Year">1st Year (Freshman)</option>
-                  <option value="2nd Year">2nd Year (Sophomore)</option>
-                  <option value="3rd Year">3rd Year (Junior)</option>
-                  <option value="4th Year">4th Year (Senior)</option>
-                  <option value="Postgraduate / Masters">Postgraduate / Masters</option>
-                  <option value="PhD Candidate">PhD Candidate</option>
+                  <option value="1st Year">1st Year (B.Tech / B.E.)</option>
+                  <option value="2nd Year">2nd Year (B.Tech / B.E.)</option>
+                  <option value="3rd Year">3rd Year (B.Tech / B.E.)</option>
+                  <option value="4th Year">4th Year (B.Tech / B.E.)</option>
+                  <option value="Postgraduate / Masters">Postgraduate (M.Tech / MCA / MBA)</option>
+                  <option value="PhD Candidate">Ph.D. Research Scholar</option>
                 </select>
               </div>
             </div>

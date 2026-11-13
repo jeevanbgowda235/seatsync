@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { BorrowRequest, BorrowingRecord } from '../types';
+import { formatIndianDate, getFallbackBookCover } from '../utils/formatters';
 
 export const AdminBorrowManagement: React.FC = () => {
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
@@ -180,11 +181,14 @@ export const AdminBorrowManagement: React.FC = () => {
                     <img
                       src={req.book.coverImage}
                       alt={req.book.title}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = getFallbackBookCover(req.book.title, req.book.category?.name);
+                      }}
                       className="w-12 h-16 object-cover rounded-lg shadow-soft-sm shrink-0"
                     />
                     <div>
                       <span className="text-[10px] font-mono font-bold text-slate-400">
-                        {req.requestCode} • Requested on {new Date(req.requestDate).toLocaleDateString()}
+                        {req.requestCode} • Requested on {formatIndianDate(req.requestDate)}
                       </span>
                       <h4 className="text-sm font-bold text-slate-900">{req.book.title}</h4>
                       <p className="text-xs text-slate-600">
@@ -267,12 +271,12 @@ export const AdminBorrowManagement: React.FC = () => {
                           {rec.book.title}
                         </td>
                         <td className="py-4 px-6 text-slate-600">
-                          {new Date(rec.borrowDate).toLocaleDateString()}
+                          {formatIndianDate(rec.borrowDate)}
                         </td>
                         <td className="py-4 px-6">
                           <div className="space-y-0.5">
                             <span className={isOverdue ? 'font-bold text-rose-600' : 'text-slate-700'}>
-                              {new Date(rec.dueDate).toLocaleDateString()}
+                              {formatIndianDate(rec.dueDate)}
                             </span>
                             {isOverdue && (
                               <span className="block text-[10px] font-bold text-rose-600 uppercase">

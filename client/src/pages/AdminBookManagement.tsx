@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { Book, BookCategory } from '../types';
+import { getFallbackBookCover } from '../utils/formatters';
 
 export const AdminBookManagement: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -259,6 +260,9 @@ export const AdminBookManagement: React.FC = () => {
                           <img
                             src={book.coverImage}
                             alt={book.title}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = getFallbackBookCover(book.title, book.category?.name);
+                            }}
                             className="w-10 h-14 object-cover rounded-lg shadow-soft-sm shrink-0"
                           />
                           <div>

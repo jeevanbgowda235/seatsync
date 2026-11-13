@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { Book } from '../types';
+import { getFallbackBookCover } from '../utils/formatters';
 
 export const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -131,6 +132,10 @@ export const BookDetailPage: React.FC = () => {
               <img
                 src={book.coverImage}
                 alt={book.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = getFallbackBookCover(book.title, book.category?.name);
+                }}
                 className="w-full h-80 sm:h-96 object-cover"
               />
               <div className="absolute top-3 left-3 bg-navy-950/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
@@ -257,7 +262,7 @@ export const BookDetailPage: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-50 text-xs text-slate-600 space-y-1.5 border border-slate-200">
               <p>• Standard borrowing period: <strong>14 Days</strong></p>
               <p>• Circulation desk will verify your student card upon collection.</p>
-              <p>• Late fee of $2.00/day applies after deadline.</p>
+              <p>• Late fee of ₹5.00/day applies after deadline.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">

@@ -85,19 +85,19 @@ export const LoginPage: React.FC = () => {
                 type="button"
                 onClick={handleDemoStudent}
                 disabled={loading}
-                className="py-2 px-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:border-sky-500 hover:text-sky-600 transition-all flex items-center justify-center space-x-1.5 shadow-soft-sm"
+                className="py-2.5 px-2.5 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-800 hover:border-sky-500 hover:text-sky-600 transition-all flex items-center justify-center space-x-1.5 shadow-soft-sm"
               >
                 <UserCheck className="w-3.5 h-3.5 text-sky-500" />
-                <span>Demo Student</span>
+                <span>Demo Student (Aarav)</span>
               </button>
               <button
                 type="button"
                 onClick={handleDemoAdmin}
                 disabled={loading}
-                className="py-2 px-2.5 rounded-xl text-xs font-semibold bg-navy-900 text-white hover:bg-navy-800 transition-all flex items-center justify-center space-x-1.5 shadow-soft-sm"
+                className="py-2.5 px-2.5 rounded-xl text-xs font-bold bg-navy-900 text-white hover:bg-navy-800 transition-all flex items-center justify-center space-x-1.5 shadow-soft-sm"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                <span>Demo Admin</span>
+                <span>Demo Admin (Dr. Rajesh)</span>
               </button>
             </div>
           </div>

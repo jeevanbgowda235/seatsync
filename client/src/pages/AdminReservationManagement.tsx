@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { Reservation } from '../types';
+import { formatIndianDate } from '../utils/formatters';
 
 export const AdminReservationManagement: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -215,7 +216,7 @@ export const AdminReservationManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-slate-700">
-                        <p className="font-semibold">{res.date}</p>
+                        <p className="font-semibold">{formatIndianDate(res.date)}</p>
                         <p className="text-[11px] text-slate-500">{res.startTime} – {res.endTime}</p>
                       </td>
                       <td className="py-4 px-6">

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { BorrowingRecord, BorrowRequest } from '../types';
+import { formatINR, formatIndianDate, getFallbackBookCover } from '../utils/formatters';
 
 export const MyBorrowedBooksPage: React.FC = () => {
   const [borrowedRecords, setBorrowedRecords] = useState<BorrowingRecord[]>([]);
@@ -52,7 +53,7 @@ export const MyBorrowedBooksPage: React.FC = () => {
     if (record.isOverdue) {
       return (
         <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
-          ⚠️ Overdue (Fine: ${record.fineAmount.toFixed(2)})
+          ⚠️ Overdue (Fine: {formatINR(record.fineAmount)})
         </span>
       );
     }
@@ -180,6 +181,10 @@ export const MyBorrowedBooksPage: React.FC = () => {
                         <img
                           src={record.book.coverImage}
                           alt={record.book.title}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getFallbackBookCover(record.book.title);
+                          }}
                           className="w-14 h-20 object-cover rounded-xl shadow-soft-sm shrink-0"
                         />
                         <div className="space-y-1">
@@ -192,8 +197,8 @@ export const MyBorrowedBooksPage: React.FC = () => {
                       </div>
 
                       <div className="p-3.5 rounded-2xl bg-slate-50 text-xs text-slate-600 space-y-1 border border-slate-100">
-                        <p>📅 <strong>Borrowed on:</strong> {new Date(record.borrowDate).toLocaleDateString()}</p>
-                        <p>⏰ <strong>Due deadline:</strong> {new Date(record.dueDate).toLocaleDateString()}</p>
+                        <p>📅 <strong>Borrowed on:</strong> {formatIndianDate(record.borrowDate)}</p>
+                        <p>⏰ <strong>Due deadline:</strong> {formatIndianDate(record.dueDate)}</p>
                       </div>
                     </div>
 
@@ -278,6 +283,10 @@ export const MyBorrowedBooksPage: React.FC = () => {
                       <img
                         src={record.book.coverImage}
                         alt={record.book.title}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getFallbackBookCover(record.book.title);
+                        }}
                         className="w-12 h-16 object-cover rounded-xl opacity-80 shrink-0"
                       />
                       <div className="space-y-1">
@@ -287,7 +296,7 @@ export const MyBorrowedBooksPage: React.FC = () => {
                         <h4 className="text-sm font-bold text-slate-900">{record.book.title}</h4>
                         <p className="text-xs text-slate-500">{record.book.author}</p>
                         <p className="text-[11px] text-slate-400">
-                          Borrowed: {new Date(record.borrowDate).toLocaleDateString()} • Returned: {record.returnDate ? new Date(record.returnDate).toLocaleDateString() : 'Yes'}
+                          Borrowed: {formatIndianDate(record.borrowDate)} • Returned: {record.returnDate ? formatIndianDate(record.returnDate) : 'Yes'}
                         </p>
                       </div>
                     </div>
@@ -297,7 +306,7 @@ export const MyBorrowedBooksPage: React.FC = () => {
                         Returned
                       </span>
                       {record.fineAmount > 0 && (
-                        <p className="text-xs text-rose-600 font-semibold">Fine: ${record.fineAmount.toFixed(2)}</p>
+                        <p className="text-xs text-rose-600 font-semibold">Fine: {formatINR(record.fineAmount)}</p>
                       )}
                     </div>
                   </div>

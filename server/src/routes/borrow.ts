@@ -494,7 +494,7 @@ router.post('/records/:id/return', authenticate, requireAdmin, async (req: AuthR
         data: {
           userId: record.userId,
           title: 'Book Return Confirmed',
-          message: `Return for "${record.book.title}" has been processed.${fineAmount > 0 ? ` Note: Late fine of $${fineAmount.toFixed(2)} applied.` : ' Thank you for returning on time!'}`,
+          message: `Return for "${record.book.title}" has been processed.${fineAmount > 0 ? ` Note: Late fine of ₹${fineAmount.toFixed(2)} applied.` : ' Thank you for returning on time!'}`,
           type: 'BORROWING',
           linkUrl: `/borrowed-books`
         }

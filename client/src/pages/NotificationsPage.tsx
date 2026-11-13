@@ -12,6 +12,7 @@ import {
 import api from '../api/client';
 import { NotificationItem } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { formatIndianDateTime } from '../utils/formatters';
 
 export const NotificationsPage: React.FC = () => {
   const { refreshUser } = useAuth();
@@ -135,7 +136,7 @@ export const NotificationsPage: React.FC = () => {
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">{notif.message}</p>
                     <div className="flex items-center space-x-3 pt-1 text-[11px] text-slate-400">
-                      <span>{new Date(notif.createdAt).toLocaleString()}</span>
+                      <span>{formatIndianDateTime(notif.createdAt)}</span>
                       {notif.linkUrl && (
                         <Link
                           to={notif.linkUrl}

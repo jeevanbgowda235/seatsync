@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { Reservation } from '../types';
+import { formatIndianDate, formatIndianDateTime } from '../utils/formatters';
 
 export const MyReservationsPage: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -217,7 +218,7 @@ export const MyReservationsPage: React.FC = () => {
                     <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-600 space-y-1">
                       <div className="flex items-center space-x-2">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span><strong>Date:</strong> {res.date}</span>
+                        <span><strong>Date:</strong> {formatIndianDate(res.date)}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -226,7 +227,7 @@ export const MyReservationsPage: React.FC = () => {
                       {res.checkInTime && (
                         <div className="flex items-center space-x-2 text-emerald-600 font-semibold">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Checked in at {new Date(res.checkInTime).toLocaleTimeString()}</span>
+                          <span>Checked in at {formatIndianDateTime(res.checkInTime)}</span>
                         </div>
                       )}
                     </div>

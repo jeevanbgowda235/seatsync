@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../api/client';
 import { User } from '../types';
+import { formatINR } from '../utils/formatters';
 
 export const AdminStudentManagement: React.FC = () => {
   const [students, setStudents] = useState<User[]>([]);
@@ -182,9 +183,9 @@ export const AdminStudentManagement: React.FC = () => {
                         </td>
                         <td className="py-4 px-6 font-mono font-semibold">
                           {(profile?.fineAmount || 0) > 0 ? (
-                            <span className="text-rose-600 font-bold">${profile.fineAmount.toFixed(2)}</span>
+                            <span className="text-rose-600 font-bold">{formatINR(profile?.fineAmount)}</span>
                           ) : (
-                            <span className="text-emerald-600">$0.00</span>
+                            <span className="text-emerald-600">₹0.00</span>
                           )}
                         </td>
                         <td className="py-4 px-6">

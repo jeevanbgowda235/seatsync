@@ -13,19 +13,23 @@ export async function runSeed() {
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      name: 'Dr. Rajesh Kumar (Librarian)',
+      department: 'Central University Library',
+      phone: '+91 94480 54321'
+    },
     create: {
-      name: 'System Administrator',
+      name: 'Dr. Rajesh Kumar (Librarian)',
       email: adminEmail,
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
-      studentId: 'STAFF-LIB-01',
-      department: 'Library Administration',
-      phone: '+1 (555) 234-5678',
+      studentId: 'LIB-CHIEF-01',
+      department: 'Central University Library',
+      phone: '+91 94480 54321',
       notifications: {
         create: {
-          title: 'System Initialized',
-          message: 'SeatSync administration dashboard is active and running.',
+          title: 'Library System Operational',
+          message: 'SeatSync central library administration dashboard is active and running.',
           type: 'SYSTEM'
         }
       }
@@ -33,21 +37,26 @@ export async function runSeed() {
   });
   console.log(`✅ Admin user verified/created: ${admin.email}`);
 
-  // 2. Upsert Demo Students
+  // 2. Upsert Demo Students (Indian academic localization)
   const studentSalt = await bcrypt.genSalt(10);
   const studentPasswordHash = await bcrypt.hash('StudentPass123!', studentSalt);
 
   const studentAlex = await prisma.user.upsert({
     where: { email: 'alex.morgan@university.edu' },
-    update: {},
+    update: {
+      name: 'Aarav Sharma',
+      department: 'Computer Science & Engineering',
+      studentId: '1NI22CS045',
+      phone: '+91 98450 12345'
+    },
     create: {
-      name: 'Alex Morgan',
+      name: 'Aarav Sharma',
       email: 'alex.morgan@university.edu',
       passwordHash: studentPasswordHash,
       role: 'STUDENT',
-      studentId: 'STU-2024-001',
-      department: 'Computer Science',
-      phone: '+1 (555) 432-1001',
+      studentId: '1NI22CS045',
+      department: 'Computer Science & Engineering',
+      phone: '+91 98450 12345',
       studentProfile: {
         create: {
           libraryCardNumber: 'LIB-2026-88102',
@@ -60,8 +69,8 @@ export async function runSeed() {
       notifications: {
         create: [
           {
-            title: 'Welcome to SeatSync!',
-            message: 'Your library card LIB-2026-88102 is active. You can now reserve seats and borrow books.',
+            title: 'Welcome to Central Library!',
+            message: 'Your digital library card LIB-2026-88102 is active. You can reserve study seats and borrow academic textbooks.',
             type: 'SYSTEM'
           }
         ]
@@ -71,15 +80,20 @@ export async function runSeed() {
 
   const studentSamantha = await prisma.user.upsert({
     where: { email: 'sam.wilson@university.edu' },
-    update: {},
+    update: {
+      name: 'Priya Patel',
+      department: 'Information Science & Engineering',
+      studentId: '1NI23IS018',
+      phone: '+91 98450 23456'
+    },
     create: {
-      name: 'Samantha Wilson',
+      name: 'Priya Patel',
       email: 'sam.wilson@university.edu',
       passwordHash: studentPasswordHash,
       role: 'STUDENT',
-      studentId: 'STU-2024-002',
-      department: 'Software Engineering',
-      phone: '+1 (555) 432-1002',
+      studentId: '1NI23IS018',
+      department: 'Information Science & Engineering',
+      phone: '+91 98450 23456',
       studentProfile: {
         create: {
           libraryCardNumber: 'LIB-2026-88103',
@@ -94,15 +108,20 @@ export async function runSeed() {
 
   const studentDavid = await prisma.user.upsert({
     where: { email: 'david.chen@university.edu' },
-    update: {},
+    update: {
+      name: 'Rohan Verma',
+      department: 'Artificial Intelligence & Data Science',
+      studentId: '1NI21AI032',
+      phone: '+91 98450 34567'
+    },
     create: {
-      name: 'David Chen',
+      name: 'Rohan Verma',
       email: 'david.chen@university.edu',
       passwordHash: studentPasswordHash,
       role: 'STUDENT',
-      studentId: 'STU-2024-003',
-      department: 'Data Science & AI',
-      phone: '+1 (555) 432-1003',
+      studentId: '1NI21AI032',
+      department: 'Artificial Intelligence & Data Science',
+      phone: '+91 98450 34567',
       studentProfile: {
         create: {
           libraryCardNumber: 'LIB-2026-88104',
@@ -152,7 +171,7 @@ export async function runSeed() {
       description: 'Even bad code can function. But if code is not clean, it can bring a development organization to its knees. This book is a must for any developer, software engineer, or student with an interest in producing better code.',
       publisher: 'Prentice Hall',
       publicationYear: 2008,
-      coverImage: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg',
       totalCopies: 5,
       availableCopies: 4,
       locationShelf: 'Shelf CS-101',
@@ -166,7 +185,7 @@ export async function runSeed() {
       description: 'The Pragmatic Programmer cuts through the increasing specialization and technicalities of modern software development to examine the core process: taking a requirement and producing working, maintainable code.',
       publisher: 'Addison-Wesley Professional',
       publicationYear: 2019,
-      coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780135957059-L.jpg',
       totalCopies: 4,
       availableCopies: 3,
       locationShelf: 'Shelf CS-102',
@@ -180,7 +199,7 @@ export async function runSeed() {
       description: 'A comprehensive update of the leading algorithms text, with new material on matchings in bipartite graphs, online algorithms, machine learning, and other topics.',
       publisher: 'The MIT Press',
       publicationYear: 2022,
-      coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780262046305-L.jpg',
       totalCopies: 6,
       availableCopies: 6,
       locationShelf: 'Shelf CS-103',
@@ -194,7 +213,7 @@ export async function runSeed() {
       description: 'Data is at the center of many challenges in system design today. Difficult issues need to be figured out, such as scalability, consistency, reliability, efficiency, and maintainability.',
       publisher: "O'Reilly Media",
       publicationYear: 2017,
-      coverImage: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9781449373320-L.jpg',
       totalCopies: 3,
       availableCopies: 3,
       locationShelf: 'Shelf CS-104',
@@ -208,7 +227,7 @@ export async function runSeed() {
       description: 'The most comprehensive, up-to-date introduction to the theory and practice of artificial intelligence. Used in over 1,500 universities in 135 countries.',
       publisher: 'Pearson',
       publicationYear: 2020,
-      coverImage: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780134610993-L.jpg',
       totalCopies: 4,
       availableCopies: 4,
       locationShelf: 'Shelf AI-201',
@@ -222,7 +241,7 @@ export async function runSeed() {
       description: 'An introduction to a broad range of topics in deep learning, covering mathematical and conceptual background, deep learning techniques used in industry, and research perspectives.',
       publisher: 'The MIT Press',
       publicationYear: 2016,
-      coverImage: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780262035613-L.jpg',
       totalCopies: 3,
       availableCopies: 3,
       locationShelf: 'Shelf AI-202',
@@ -236,7 +255,7 @@ export async function runSeed() {
       description: 'Renowned professor and lecturer Gilbert Strang illustrates that linear algebra is a fascinating subject to understand by applying theory to practical matrix problems.',
       publisher: 'Cengage Learning',
       publicationYear: 2006,
-      coverImage: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780030105678-L.jpg',
       totalCopies: 4,
       availableCopies: 4,
       locationShelf: 'Shelf MA-301',
@@ -250,7 +269,7 @@ export async function runSeed() {
       description: 'Five years after Don’t Make Me Think was first published, hundreds of thousands of designers and developers rely on usability guru Steve Krug’s guide to intuitive navigation.',
       publisher: 'New Riders',
       publicationYear: 2014,
-      coverImage: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&q=80&w=600',
+      coverImage: 'https://covers.openlibrary.org/b/isbn/9780321965516-L.jpg',
       totalCopies: 4,
       availableCopies: 4,
       locationShelf: 'Shelf UX-401',
