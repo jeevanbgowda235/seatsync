@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: seatsync-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: server
+    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: seatsync-db
+          property: connectionString
+
+databases:
+  - name: seatsync-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: 16

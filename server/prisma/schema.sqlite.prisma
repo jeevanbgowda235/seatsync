@@ -1,0 +1,187 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         String          @default("STUDENT")
+  name         String
+  studentId    String?         @unique
+  department   String?
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  studentProfile   StudentProfile?
+  reservations     Reservation[]
+  borrowRequests   BorrowRequest[]
+  borrowingRecords BorrowingRecord[]
+  notifications    Notification[]
+}
+
+model StudentProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yearOfStudy       String?
+  libraryCardNumber String   @unique
+  maxBorrowLimit    Int      @default(3)
+  status            String   @default("ACTIVE")
+  fineAmount        Float    @default(0.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Seat {
+  id          String        @id @default(uuid())
+  seatNumber  String        @unique
+  floor       Int           @default(1)
+  section     String
+  type        String        @default("STANDARD")
+  hasPower    Boolean       @default(true)
+  hasMonitor  Boolean       @default(false)
+  isActive    Boolean       @default(true)
+  row         String
+  column      Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  reservations Reservation[]
+
+  @@index([floor, section])
+}
+
+model Reservation {
+  id              String      @id @default(uuid())
+  reservationCode String      @unique
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seatId          String
+  seat            Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  date            String
+  startTime       String
+  endTime         String
+  status          String      @default("CONFIRMED")
+  qrCodeData      String
+  checkInTime     DateTime?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  checkIns CheckIn[]
+
+  @@index([seatId, date, startTime, endTime])
+  @@index([userId, date])
+}
+
+model CheckIn {
+  id            String      @id @default(uuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  checkInMethod String      @default("QR_SCAN")
+  checkInTime   DateTime    @default(now())
+  deviceDetails String?
+  createdAt     DateTime    @default(now())
+}
+
+model BookCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  books Book[]
+}
+
+model Book {
+  id               String       @id @default(uuid())
+  title            String
+  author           String
+  isbn             String       @unique
+  categoryId       String
+  category         BookCategory @relation(fields: [categoryId], references: [id])
+  description      String
+  publisher        String
+  publicationYear  Int
+  coverImage       String
+  totalCopies      Int          @default(1)
+  availableCopies  Int          @default(1)
+  locationShelf    String
+  rating           Float        @default(4.5)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  borrowRequests   BorrowRequest[]
+  borrowingRecords BorrowingRecord[]
+
+  @@index([title])
+  @@index([author])
+  @@index([isbn])
+}
+
+model BorrowRequest {
+  id              String    @id @default(uuid())
+  requestCode     String    @unique
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId          String
+  book            Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  requestDate     DateTime  @default(now())
+  status          String    @default("PENDING")
+  reviewDate      DateTime?
+  reviewedByUserId String?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  borrowingRecord BorrowingRecord?
+
+  @@index([userId, status])
+}
+
+model BorrowingRecord {
+  id          String         @id @default(uuid())
+  borrowCode  String         @unique
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId      String
+  book        Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  requestId   String?        @unique
+  request     BorrowRequest? @relation(fields: [requestId], references: [id])
+  borrowDate  DateTime       @default(now())
+  dueDate     DateTime
+  returnDate  DateTime?
+  status      String         @default("BORROWED")
+  fineAmount  Float          @default(0.0)
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([dueDate])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("SYSTEM")
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
