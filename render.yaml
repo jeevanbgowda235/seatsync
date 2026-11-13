@@ -14,15 +14,15 @@ services:
         value: 10000
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
       - key: CORS_ORIGIN
-        value: "*"
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: seatsync-db
-          property: connectionString
-
-databases:
-  - name: seatsync-db
-    plan: free
-    region: oregon
-    postgresMajorVersion: 16
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@seatsync.edu
+      - key: SEED_DEMO_DATA
+        value: "false"

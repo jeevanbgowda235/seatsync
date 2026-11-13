@@ -4,14 +4,16 @@
   "description": "SeatSync Backend API - Library Seat Reservation & Book Borrowing Management System",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && npx prisma generate",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "ts-node-dev src/prisma/seed.ts"
+    "seed": "ts-node src/prisma/seed.ts",
+    "test": "ts-node src/tests/unit-tests.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -34,6 +36,7 @@
     "@types/node": "^22.9.0",
     "@types/qrcode": "^1.5.5",
     "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
   }
