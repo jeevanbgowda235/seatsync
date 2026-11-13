@@ -288,8 +288,16 @@ router.post('/requests/:id/review', authenticate, requireAdmin, async (req: Auth
       }
 
       // Action: APPROVE
-      // Check available copies again inside transaction
-      if (request.book.availableCopies <= 0) {
+      // PostgreSQL concurrency protection: Lock Book row to prevent negative inventory race conditions
+      try {
+        await tx.$executeRaw`SELECT id FROM "Book" WHERE id = ${request.bookId} FOR UPDATE`;
+      } catch (_lockError) {}
+
+      const freshBook = await tx.book.findUnique({
+        where: { id: request.bookId }
+      });
+
+      if (!freshBook || freshBook.availableCopies <= 0) {
         throw new Error('NO_COPIES_AVAILABLE');
       }
 

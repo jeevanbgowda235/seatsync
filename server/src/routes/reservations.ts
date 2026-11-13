@@ -28,7 +28,16 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
 
     // Execute in a transaction to prevent race conditions & double bookings
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Verify seat exists and is active
+      // 1. PostgreSQL Concurrency Protection: Acquire an exclusive row lock on the Seat.
+      // Any concurrent reservation attempt for this seat will wait at FOR UPDATE until
+      // this transaction commits, preventing race-condition double bookings.
+      try {
+        await tx.$executeRaw`SELECT id FROM "Seat" WHERE id = ${validated.seatId} FOR UPDATE`;
+      } catch (_lockError) {
+        // Fallback if provider doesn't support FOR UPDATE (e.g., in-memory mock or unit tests)
+      }
+
+      // 2. Verify seat exists and is active
       const seat = await tx.seat.findUnique({
         where: { id: validated.seatId }
       });

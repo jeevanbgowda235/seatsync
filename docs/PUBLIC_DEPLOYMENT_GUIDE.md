@@ -1,79 +1,84 @@
-# SEATSYNC: COMPLETE PUBLIC DEPLOYMENT & PRODUCTION HOSTING GUIDE
+# SEATSYNC: COMPLETE PRODUCTION DEPLOYMENT GUIDE (SUPABASE POSTGRESQL + RENDER + VERCEL)
 
-Follow this guide to make **SeatSync** accessible to you, your professors, and your friends from different laptops, mobile smartphones, and internet connections anywhere in the world.
+Follow this guide to deploy **SeatSync** to public production infrastructure using **Supabase Managed PostgreSQL**, **Render Web Service** (Backend), and **Vercel** (Frontend).
 
 ---
 
-## ARCHITECTURE OVERVIEW
+## 1. ARCHITECTURE & SECURITY TOPOLOGY
 
 ```
-+-------------------------------------------------------------+
-|                        PUBLIC INTERNET                      |
-+-------------------------------------------------------------+
-                              |
-                              v
-        +---------------------------------------------+
-        |             FRONTEND HOST (Vercel)          |
-        |  URL: https://seatsync.vercel.app          |
-        |  Tech: React + TypeScript + Vite + Tailwind |
-        +---------------------------------------------+
-                              |
-                              | API Requests
-                              v
-        +---------------------------------------------+
-        |            BACKEND HOST (Render)            |
-        |  URL: https://seatsync-api.onrender.com     |
-        |  Tech: Node.js + Express + Prisma ORM       |
-        +---------------------------------------------+
-                              |
-                              | SSL Connection
-                              v
-        +---------------------------------------------+
-        |          MANAGED POSTGRESQL DATABASE        |
-        |    Provider: Supabase / Render / Neon       |
-        |    Host: ep-xxxx.us-east-2.aws.neon.tech    |
-        +---------------------------------------------+
++-----------------------------------------------------------------------+
+|                            PUBLIC INTERNET                            |
++-----------------------------------------------------------------------+
+                                   |
+                  HTTPS Requests   v
+            +-----------------------------------------------+
+            |          FRONTEND APPLICATION (Vercel)        |
+            |       URL: https://seatsync.vercel.app        |
+            |    React 18 + TypeScript + Vite + Tailwind    |
+            +-----------------------------------------------+
+                                   |
+                  API Requests     | (Restricted by CORS)
+                  Authorization:   v Bearer JWT
+            +-----------------------------------------------+
+            |           BACKEND REST API (Render)           |
+            |       URL: https://seatsync-api.onrender.com   |
+            |     Node.js + Express + Prisma ORM + Zod      |
+            +-----------------------------------------------+
+                                   |
+                  PostgreSQL       | Row-Level Concurrency Locks
+                  SSL Connection   v (SELECT ... FOR UPDATE)
+            +-----------------------------------------------+
+            |          SUPABASE POSTGRESQL DATABASE         |
+            |      Transaction Pooler: Port 6543 (PgBouncer)|
+            |      Direct Migration Link: Port 5432 (TCP)   |
+            +-----------------------------------------------+
 ```
 
 ---
 
-## STEP 1: DEPLOY FREE POSTGRESQL DATABASE (Supabase or Neon)
+## 2. STEP 1: PROVISION SUPABASE POSTGRESQL DATABASE
 
-### Option A: Using Supabase (Recommended)
-1. Go to [https://supabase.com](https://supabase.com) and click **"Start your project"** (Free tier).
-2. Create a new project named `seatsync-db`.
-3. Set a strong database password (e.g. `SeatSyncPostgres2026!`).
-4. Select the region closest to you.
-5. In **Project Settings** $\rightarrow$ **Database**, find the **Connection String** (URI mode):
-   ```text
-   postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
-   ```
-6. Copy this string for Step 2.
+1. Log in to [Supabase](https://supabase.com) and click **"New Project"**.
+2. Set project name: `seatsync-production`.
+3. Generate a strong Database Password and store it securely.
+4. Select the region closest to your users.
+5. In your Supabase Dashboard, navigate to **Project Settings** $\rightarrow$ **Database** $\rightarrow$ **Connection string**:
+   - **Transaction Pooler (Port 6543)** - Recommended for runtime queries:
+     ```text
+     postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true
+     ```
+   - **Direct Connection (Port 5432)** - Used for running initial migrations:
+     ```text
+     postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
+     ```
 
-### Option B: Using Neon
-1. Go to [https://neon.tech](https://neon.tech) and create a free project.
-2. Copy the PostgreSQL connection URI provided on the dashboard.
+### Database Schema Initialization (Choose Either Method):
+
+* **Option A — Automated via Prisma CLI:**
+  ```bash
+  cd server
+  npx prisma db push
+  npm run seed
+  ```
+
+* **Option B — Instant 1-Click via Supabase SQL Editor:**
+  1. In Supabase Dashboard, click **SQL Editor** $\rightarrow$ **"New query"**.
+  2. Open and copy the contents of `server/prisma/migrations/20261113000000_init/migration.sql`.
+  3. Paste into the SQL editor and click **Run**.
+  4. All 10 tables, 6 enums, unique indexes, and foreign key cascades are created in milliseconds.
 
 ---
 
-## STEP 2: DEPLOY BACKEND ON RENDER
+## 3. STEP 2: DEPLOY BACKEND SERVICE ON RENDER
 
-1. Push your repository to **GitHub** (or create a private GitHub repository):
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: complete SeatSync production full-stack release"
-   git remote add origin https://github.com/YOUR_USERNAME/seatsync.git
-   git push -u origin main
-   ```
-2. Log in to [https://render.com](https://render.com).
-3. Click **"New +"** $\rightarrow$ **"Web Service"**.
-4. Connect your GitHub repository.
-5. Configure the service settings:
+1. Push your repository to GitHub: `https://github.com/jeevanbgowda235/seatsync`.
+2. In [Render Dashboard](https://dashboard.render.com), click **"New +"** $\rightarrow$ **"Web Service"**.
+3. Select your repository `jeevanbgowda235/seatsync`.
+4. Configure service parameters:
    - **Name:** `seatsync-api`
    - **Root Directory:** `server`
    - **Environment:** `Node`
-   - **Region:** Any close region (e.g., Oregon or Frankfurt)
    - **Branch:** `main`
    - **Build Command:**
      ```bash
@@ -83,64 +88,49 @@ Follow this guide to make **SeatSync** accessible to you, your professors, and y
      ```bash
      npm run start
      ```
-   - **Plan:** Free
-6. Add **Environment Variables** in Render:
-   - `NODE_ENV`: `production`
-   - `PORT`: `5000`
-   - `JWT_SECRET`: `seatsync-super-secret-jwt-key-2026-prod`
-   - `JWT_EXPIRES_IN`: `7d`
-   - `CORS_ORIGIN`: `*`
-   - `DATABASE_URL`: `[PASTE_YOUR_SUPABASE_OR_NEON_POSTGRES_CONNECTION_STRING_HERE]`
-7. Click **"Create Web Service"**.
-8. Render will build the TypeScript backend, connect to PostgreSQL, apply the schema, and start the API!
-9. Once deployed, Render will display your public API URL:
+5. Configure Environment Variables in Render:
+
+| Variable Name | Value / Description |
+| :--- | :--- |
+| `NODE_ENV` | `production` |
+| `PORT` | `5000` |
+| `DATABASE_URL` | Your Supabase connection string (Port 6543 or 5432) |
+| `DIRECT_URL` | Your Supabase direct connection string (Port 5432) |
+| `JWT_SECRET` | Generate via: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `JWT_EXPIRES_IN` | `7d` |
+| `CORS_ORIGIN` | `https://seatsync.vercel.app` *(Set to your Vercel frontend domain)* |
+| `FRONTEND_URL` | `https://seatsync.vercel.app` |
+| `ADMIN_EMAIL` | `admin@seatsync.edu` |
+| `ADMIN_INITIAL_PASSWORD` | Strong password of your choice |
+| `SEED_DEMO_DATA` | `false` *(Set `false` for production to avoid mock student data)* |
+
+6. Click **"Deploy Web Service"**.
+7. Render will output your live API endpoint:
    `https://seatsync-api.onrender.com`
-
-### Initialize Database Seed Data:
-To populate the 40 seats, 8 rich book titles, and demo accounts, run the seed script directly from the Render Shell tab:
-```bash
-npm run seed
-```
+   Verify via browser or curl: `https://seatsync-api.onrender.com/api/health`
 
 ---
 
-## STEP 3: DEPLOY FRONTEND ON VERCEL
+## 4. STEP 3: DEPLOY FRONTEND ON VERCEL
 
-1. Log in to [https://vercel.com](https://vercel.com).
-2. Click **"Add New..."** $\rightarrow$ **"Project"**.
-3. Import your GitHub repository.
-4. In the configuration screen:
+1. Go to [Vercel](https://vercel.com) and click **"Add New Project"**.
+2. Import repository `jeevanbgowda235/seatsync`.
+3. Configure project settings:
    - **Framework Preset:** `Vite`
-   - **Root Directory:** Click "Edit" and choose `client`
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-5. Add **Environment Variable**:
-   - **Key:** `VITE_API_BASE_URL`
-   - **Value:** `https://seatsync-api.onrender.com/api` (use your actual Render backend URL)
-6. Click **"Deploy"**.
-7. In ~30 seconds, Vercel will give you a public production URL:
-   `https://seatsync.vercel.app` (or your custom domain)
+   - **Root Directory:** `client`
+4. Add Environment Variable:
+   - `VITE_API_BASE_URL`: `https://seatsync-api.onrender.com/api`
+5. Click **"Deploy"**.
+6. Vercel will build and assign your production domain: `https://seatsync.vercel.app`.
 
 ---
 
-## STEP 4: VERIFY PUBLIC ACCESS FOR FRIENDS
+## 5. STEP 4: PRODUCTION VERIFICATION CHECKLIST
 
-Share your public Vercel link (`https://seatsync.vercel.app`) with your friends.
-
-They can open it on:
-- Windows laptops
-- MacBooks / iPads
-- Android smartphones / iPhones
-- Chrome, Safari, Edge, or Firefox
-
-### Demo Accounts for Testing:
-- **Demo Student:**
-  - Email: `alex.morgan@university.edu`
-  - Password: `StudentPass123!`
-  - Features: Reserve reading desk, view real-time green/red seat map, request book borrowing, access QR pass.
-- **Demo Administrator:**
-  - Email: `admin@seatsync.edu`
-  - Password: `AdminPassword123!`
-  - Features: Recharts analytics dashboard, review and approve borrow requests, check in students, manage seats and books.
-- **Self-Registration:**
-  - Anyone can click **"Get Started"** or **"Register"** to create a student account with their own name and student ID.
+- [x] **Database Provider:** PostgreSQL (Supabase with connection pooling).
+- [x] **Schema Integrity:** Native ENUM types (`Role`, `ReservationStatus`, `BorrowStatus`, `LoanStatus`, `SeatType`, `NotificationType`).
+- [x] **Concurrency Protection:** Exclusive row locks (`SELECT id FROM "Seat" WHERE id = ... FOR UPDATE`) guarantee zero double-bookings under heavy concurrent reservation traffic.
+- [x] **Inventory Protection:** Row-level locking on `Book` table guarantees `availableCopies` never becomes negative.
+- [x] **CORS Security:** Restricts incoming requests to only the configured frontend domain; blocks arbitrary origins.
+- [x] **Cryptographic JWT:** Production requires 256-bit cryptographically secure keys; no hardcoded defaults.
+- [x] **Credential Separation:** Production admin accounts are managed via environment variables and isolated from development demo accounts.
