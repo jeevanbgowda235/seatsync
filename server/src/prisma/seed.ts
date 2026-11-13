@@ -1,55 +1,24 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import QRCode from 'qrcode';
-import crypto from 'crypto';
 
 const prisma = new PrismaClient();
-const isProduction = process.env.NODE_ENV === 'production';
 
-async function main() {
-  console.log(`🌱 Starting SeatSync Database Seed (Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})...`);
+export async function runSeed() {
+  console.log('🌱 Starting SeatSync Database Seed (Idempotent Mode)...');
 
-  // Clean existing data in reverse order of foreign keys
-  await prisma.checkIn.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.borrowingRecord.deleteMany();
-  await prisma.borrowRequest.deleteMany();
-  await prisma.reservation.deleteMany();
-  await prisma.book.deleteMany();
-  await prisma.bookCategory.deleteMany();
-  await prisma.seat.deleteMany();
-  await prisma.studentProfile.deleteMany();
-  await prisma.user.deleteMany();
-
-  console.log('🧹 Existing data wiped.');
-
-  // 1. Resolve Admin Credentials
-  const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'admin@seatsync.edu';
-  let adminPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim();
-
-  if (isProduction) {
-    if (!adminPassword || adminPassword === 'AdminPassword123!') {
-      adminPassword = crypto.randomBytes(8).toString('hex') + '!A1';
-      console.log('================================================================');
-      console.log('⚠️ [PRODUCTION ADMIN CREDENTIAL GENERATED]');
-      console.log(`📧 Admin Email:    ${adminEmail}`);
-      console.log(`🔑 Admin Password: ${adminPassword}`);
-      console.log('⚠️ IMPORTANT: Save these credentials immediately and change upon login.');
-      console.log('================================================================');
-    } else {
-      console.log(`🔒 Production Admin configured from environment for: ${adminEmail}`);
-    }
-  } else {
-    adminPassword = adminPassword || 'AdminPassword123!';
-  }
-
+  // 1. Upsert Admin User
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@seatsync.edu').trim().toLowerCase();
+  const adminPassword = (process.env.ADMIN_INITIAL_PASSWORD || 'AdminPassword123!').trim();
   const adminSalt = await bcrypt.genSalt(10);
   const adminPasswordHash = await bcrypt.hash(adminPassword, adminSalt);
 
-  const admin = await prisma.user.create({
-    data: {
+  const admin = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
       name: 'System Administrator',
-      email: adminEmail.toLowerCase(),
+      email: adminEmail,
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       studentId: 'STAFF-LIB-01',
@@ -64,9 +33,92 @@ async function main() {
       }
     }
   });
-  console.log(`✅ Admin user created: ${admin.email}`);
+  console.log(`✅ Admin user verified/created: ${admin.email}`);
 
-  // 2. Create Categories
+  // 2. Upsert Demo Students
+  const studentSalt = await bcrypt.genSalt(10);
+  const studentPasswordHash = await bcrypt.hash('StudentPass123!', studentSalt);
+
+  const studentAlex = await prisma.user.upsert({
+    where: { email: 'alex.morgan@university.edu' },
+    update: {},
+    create: {
+      name: 'Alex Morgan',
+      email: 'alex.morgan@university.edu',
+      passwordHash: studentPasswordHash,
+      role: 'STUDENT',
+      studentId: 'STU-2024-001',
+      department: 'Computer Science',
+      phone: '+1 (555) 432-1001',
+      studentProfile: {
+        create: {
+          libraryCardNumber: 'LIB-2026-88102',
+          yearOfStudy: '3rd Year',
+          maxBorrowLimit: 3,
+          status: 'ACTIVE',
+          fineAmount: 0.0
+        }
+      },
+      notifications: {
+        create: [
+          {
+            title: 'Welcome to SeatSync!',
+            message: 'Your library card LIB-2026-88102 is active. You can now reserve seats and borrow books.',
+            type: 'SYSTEM'
+          }
+        ]
+      }
+    }
+  });
+
+  const studentSamantha = await prisma.user.upsert({
+    where: { email: 'sam.wilson@university.edu' },
+    update: {},
+    create: {
+      name: 'Samantha Wilson',
+      email: 'sam.wilson@university.edu',
+      passwordHash: studentPasswordHash,
+      role: 'STUDENT',
+      studentId: 'STU-2024-002',
+      department: 'Software Engineering',
+      phone: '+1 (555) 432-1002',
+      studentProfile: {
+        create: {
+          libraryCardNumber: 'LIB-2026-88103',
+          yearOfStudy: '2nd Year',
+          maxBorrowLimit: 3,
+          status: 'ACTIVE',
+          fineAmount: 0.0
+        }
+      }
+    }
+  });
+
+  const studentDavid = await prisma.user.upsert({
+    where: { email: 'david.chen@university.edu' },
+    update: {},
+    create: {
+      name: 'David Chen',
+      email: 'david.chen@university.edu',
+      passwordHash: studentPasswordHash,
+      role: 'STUDENT',
+      studentId: 'STU-2024-003',
+      department: 'Data Science & AI',
+      phone: '+1 (555) 432-1003',
+      studentProfile: {
+        create: {
+          libraryCardNumber: 'LIB-2026-88104',
+          yearOfStudy: '4th Year',
+          maxBorrowLimit: 3,
+          status: 'ACTIVE',
+          fineAmount: 0.0
+        }
+      }
+    }
+  });
+  console.log('✅ Demo student accounts verified/created.');
+
+  // 3. Upsert Categories
   const categories = [
     { name: 'Computer Science & Software', slug: 'computer-science', description: 'Algorithms, data structures, software engineering, and web development', icon: 'Code' },
     { name: 'Artificial Intelligence & Data', slug: 'ai-data-science', description: 'Machine learning, deep learning, neural networks, and statistics', icon: 'Brain' },
@@ -78,12 +130,16 @@ async function main() {
 
   const createdCategories: any[] = [];
   for (const cat of categories) {
-    const created = await prisma.bookCategory.create({ data: cat });
+    const created = await prisma.bookCategory.upsert({
+      where: { slug: cat.slug },
+      update: {},
+      create: cat
+    });
     createdCategories.push(created);
   }
-  console.log(`✅ ${createdCategories.length} book categories created.`);
+  console.log(`✅ ${createdCategories.length} categories verified/created.`);
 
-  // 3. Create Books
+  // 4. Upsert Books
   const csCat = createdCategories.find(c => c.slug === 'computer-science')!;
   const aiCat = createdCategories.find(c => c.slug === 'ai-data-science')!;
   const mathCat = createdCategories.find(c => c.slug === 'mathematics')!;
@@ -95,7 +151,7 @@ async function main() {
       author: 'Robert C. Martin',
       isbn: '978-0132350884',
       categoryId: csCat.id,
-      description: 'Even bad code can function. But if code is not clean, it can bring a development organization to its knees. Every year, countless hours and significant resources are lost due to poorly written code. This book is a must for any developer, software engineer, project manager, team lead, or systems analyst with an interest in producing better code.',
+      description: 'Even bad code can function. But if code is not clean, it can bring a development organization to its knees. This book is a must for any developer, software engineer, or student with an interest in producing better code.',
       publisher: 'Prentice Hall',
       publicationYear: 2008,
       coverImage: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&q=80&w=600',
@@ -109,7 +165,7 @@ async function main() {
       author: 'David Thomas, Andrew Hunt',
       isbn: '978-0135957059',
       categoryId: csCat.id,
-      description: 'The Pragmatic Programmer cuts through the increasing specialization and technicalities of modern software development to examine the core process: taking a requirement and producing working, maintainable code that delights users.',
+      description: 'The Pragmatic Programmer cuts through the increasing specialization and technicalities of modern software development to examine the core process: taking a requirement and producing working, maintainable code.',
       publisher: 'Addison-Wesley Professional',
       publicationYear: 2019,
       coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
@@ -193,7 +249,7 @@ async function main() {
       author: 'Steve Krug',
       isbn: '978-0321965516',
       categoryId: designCat.id,
-      description: 'Since Don’t Make Me Think was first published in 2000, hundreds of thousands of Web designers and developers have relied on usability guru Steve Krug’s guide to help them understand the principles of intuitive navigation and information design.',
+      description: 'Five years after Don’t Make Me Think was first published, hundreds of thousands of designers and developers rely on usability guru Steve Krug’s guide to intuitive navigation.',
       publisher: 'New Riders',
       publicationYear: 2014,
       coverImage: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&q=80&w=600',
@@ -206,12 +262,16 @@ async function main() {
 
   const createdBooks: any[] = [];
   for (const b of booksData) {
-    const book = await prisma.book.create({ data: b });
+    const book = await prisma.book.upsert({
+      where: { isbn: b.isbn },
+      update: {},
+      create: b
+    });
     createdBooks.push(book);
   }
-  console.log(`✅ ${createdBooks.length} books added to catalogue.`);
+  console.log(`✅ ${createdBooks.length} books verified/created.`);
 
-  // 4. Create 40 Seats organized in Zones & Rows
+  // 5. Upsert 40 Seats
   const seatDefinitions: any[] = [];
   const rows = ['A', 'B', 'C', 'D'];
 
@@ -260,101 +320,22 @@ async function main() {
   }
 
   for (const seatDef of seatDefinitions) {
-    await prisma.seat.create({ data: seatDef });
+    await prisma.seat.upsert({
+      where: { seatNumber: seatDef.seatNumber },
+      update: {},
+      create: seatDef
+    });
   }
-  console.log(`✅ 40 physical library seats created across 4 zones.`);
+  console.log(`✅ 40 physical library seats verified/created.`);
 
-  // 5. Seed Demo Students & Bookings ONLY if not in production or SEED_DEMO_DATA=true
-  const shouldSeedDemoData = process.env.SEED_DEMO_DATA === 'true' || !isProduction;
-
-  if (shouldSeedDemoData) {
-    console.log('📦 Seeding demo students and reservations...');
-
-    const studentSalt = await bcrypt.genSalt(10);
-    const studentPasswordHash = await bcrypt.hash('StudentPass123!', studentSalt);
-
-    const studentAlex = await prisma.user.create({
-      data: {
-        name: 'Alex Morgan',
-        email: 'alex.morgan@university.edu',
-        passwordHash: studentPasswordHash,
-        role: 'STUDENT',
-        studentId: 'STU-2024-001',
-        department: 'Computer Science',
-        phone: '+1 (555) 432-1001',
-        studentProfile: {
-          create: {
-            libraryCardNumber: 'LIB-2026-88102',
-            yearOfStudy: '3rd Year',
-            maxBorrowLimit: 3,
-            status: 'ACTIVE',
-            fineAmount: 0.0
-          }
-        },
-        notifications: {
-          create: [
-            {
-              title: 'Welcome to SeatSync!',
-              message: 'Your library card LIB-2026-88102 is active. You can now reserve seats and borrow books.',
-              type: 'SYSTEM'
-            }
-          ]
-        }
-      }
-    });
-
-    const studentSamantha = await prisma.user.create({
-      data: {
-        name: 'Samantha Wilson',
-        email: 'sam.wilson@university.edu',
-        passwordHash: studentPasswordHash,
-        role: 'STUDENT',
-        studentId: 'STU-2024-002',
-        department: 'Software Engineering',
-        phone: '+1 (555) 432-1002',
-        studentProfile: {
-          create: {
-            libraryCardNumber: 'LIB-2026-88103',
-            yearOfStudy: '2nd Year',
-            maxBorrowLimit: 3,
-            status: 'ACTIVE',
-            fineAmount: 0.0
-          }
-        }
-      }
-    });
-
-    const studentDavid = await prisma.user.create({
-      data: {
-        name: 'David Chen',
-        email: 'david.chen@university.edu',
-        passwordHash: studentPasswordHash,
-        role: 'STUDENT',
-        studentId: 'STU-2024-003',
-        department: 'Data Science & AI',
-        phone: '+1 (555) 432-1003',
-        studentProfile: {
-          create: {
-            libraryCardNumber: 'LIB-2026-88104',
-            yearOfStudy: '4th Year',
-            maxBorrowLimit: 3,
-            status: 'ACTIVE',
-            fineAmount: 0.0
-          }
-        }
-      }
-    });
-
-    console.log('✅ Demo student accounts created.');
-
+  // 6. Demo Active Reservations & Loans (Upserted safely)
+  const existingReservationsCount = await prisma.reservation.count();
+  if (existingReservationsCount === 0) {
+    console.log('📦 Creating initial demo reservations and loans...');
     const seatA01 = await prisma.seat.findUnique({ where: { seatNumber: 'A01' } });
     const seatB02 = await prisma.seat.findUnique({ where: { seatNumber: 'B02' } });
-    const seatC05 = await prisma.seat.findUnique({ where: { seatNumber: 'C05' } });
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
     const qrAlexData = await QRCode.toDataURL(JSON.stringify({
       code: 'RES-2026-ALX01',
@@ -363,8 +344,10 @@ async function main() {
       time: '09:00-11:00'
     }));
 
-    await prisma.reservation.create({
-      data: {
+    await prisma.reservation.upsert({
+      where: { reservationCode: 'RES-2026-ALX01' },
+      update: {},
+      create: {
         reservationCode: 'RES-2026-ALX01',
         userId: studentAlex.id,
         seatId: seatA01!.id,
@@ -378,7 +361,7 @@ async function main() {
           create: {
             checkInMethod: 'QR_SCAN',
             checkInTime: new Date(),
-            deviceDetails: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'
+            deviceDetails: 'Web Client'
           }
         }
       }
@@ -391,8 +374,10 @@ async function main() {
       time: '14:00-17:00'
     }));
 
-    await prisma.reservation.create({
-      data: {
+    await prisma.reservation.upsert({
+      where: { reservationCode: 'RES-2026-SAM02' },
+      update: {},
+      create: {
         reservationCode: 'RES-2026-SAM02',
         userId: studentSamantha.id,
         seatId: seatB02!.id,
@@ -404,33 +389,15 @@ async function main() {
       }
     });
 
-    const qrDavidData = await QRCode.toDataURL(JSON.stringify({
-      code: 'RES-2026-DAV03',
-      seat: 'C05',
-      date: tomorrowStr,
-      time: '13:00-15:00'
-    }));
-
-    await prisma.reservation.create({
-      data: {
-        reservationCode: 'RES-2026-DAV03',
-        userId: studentDavid.id,
-        seatId: seatC05!.id,
-        date: tomorrowStr,
-        startTime: '13:00',
-        endTime: '15:00',
-        status: 'CONFIRMED',
-        qrCodeData: qrDavidData
-      }
-    });
-
     // Loans
     const bookCleanCode = createdBooks.find(b => b.title.includes('Clean Code'))!;
     const dueDateAlex = new Date();
     dueDateAlex.setDate(dueDateAlex.getDate() + 10);
 
-    await prisma.borrowingRecord.create({
-      data: {
+    await prisma.borrowingRecord.upsert({
+      where: { borrowCode: 'BRW-2026-ALX99' },
+      update: {},
+      create: {
         borrowCode: 'BRW-2026-ALX99',
         userId: studentAlex.id,
         bookId: bookCleanCode.id,
@@ -439,44 +406,20 @@ async function main() {
         status: 'BORROWED'
       }
     });
-
-    const bookPragmatic = createdBooks.find(b => b.title.includes('Pragmatic'))!;
-    const dueDateSam = new Date();
-    dueDateSam.setDate(dueDateSam.getDate() + 7);
-
-    await prisma.borrowingRecord.create({
-      data: {
-        borrowCode: 'BRW-2026-SAM77',
-        userId: studentSamantha.id,
-        bookId: bookPragmatic.id,
-        borrowDate: new Date(),
-        dueDate: dueDateSam,
-        status: 'BORROWED'
-      }
-    });
-
-    const bookAI = createdBooks.find(b => b.title.includes('Artificial Intelligence'))!;
-    await prisma.borrowRequest.create({
-      data: {
-        requestCode: 'REQ-2026-DAV44',
-        userId: studentDavid.id,
-        bookId: bookAI.id,
-        status: 'PENDING'
-      }
-    });
-    console.log('✅ Demo loans and reservations created.');
-  } else {
-    console.log('🔒 Production mode: Demo student accounts and mock bookings skipped.');
+    console.log('✅ Demo reservations and loans initialized.');
   }
 
-  console.log('🎉 Seed completed successfully!');
+  console.log('🎉 Seed synchronization completed successfully!');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seed error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// When executed directly (e.g. npm run seed)
+if (require.main === module) {
+  runSeed()
+    .catch((e) => {
+      console.error('❌ Seed error:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://seatsync-api.onrender.com/api/$1"
+      "destination": "https://seatsync-backend-dzxe.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",

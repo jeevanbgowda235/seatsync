@@ -61,4 +61,4 @@ RUN node -e "const { PrismaClient } = require('@prisma/client'); const p = new P
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]

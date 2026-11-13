@@ -14,26 +14,25 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends openssl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. Verify OpenSSL version in build log
 RUN openssl version
 
-# 3. Copy dependency manifests
+# 2. Copy dependency manifests
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# 4. Clean any stale cached Prisma artifacts and install dependencies
+# 3. Clean any stale cached Prisma artifacts and install dependencies
 RUN rm -rf node_modules/.prisma node_modules/@prisma/client dist
 RUN npm ci
 
-# 5. Copy application source code and TypeScript config
+# 4. Copy application source code and TypeScript config
 COPY tsconfig.json ./
 COPY src ./src
 
-# 6. Generate Prisma Client for debian-openssl-3.0.x and build application
+# 5. Generate Prisma Client for debian-openssl-3.0.x and build application
 RUN npx prisma generate
 RUN npm run build
 
-# 7. Build-time sanity verification of Prisma client instantiation in Debian
+# 6. Build-time sanity verification of Prisma client instantiation in Debian
 RUN node -e "const { PrismaClient } = require('@prisma/client'); const p = new PrismaClient(); console.log('✅ Builder: Prisma Engine initialized successfully in Debian Bookworm');"
 
 # --------------------------------------------------------------------
@@ -50,24 +49,24 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends openssl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. Verify OpenSSL version in runtime stage
 RUN openssl version
 
-# 3. Copy dependency manifests and install production dependencies only
+# 2. Copy dependency manifests and install production dependencies only
 COPY package*.json ./
 RUN rm -rf node_modules/.prisma node_modules/@prisma/client dist
 RUN npm ci --omit=dev
 
-# 4. Copy Prisma schema and generate native runtime query engine
+# 3. Copy Prisma schema and generate native runtime query engine
 COPY prisma ./prisma/
 RUN npx prisma generate
 
-# 5. Copy compiled JavaScript from builder stage
+# 4. Copy compiled JavaScript from builder stage
 COPY --from=builder /app/dist ./dist
 
-# 6. Runtime sanity verification: ensure libquery_engine-debian-openssl-3.0.x.so.node loads cleanly
+# 5. Runtime sanity verification: ensure libquery_engine-debian-openssl-3.0.x.so.node loads cleanly
 RUN node -e "const { PrismaClient } = require('@prisma/client'); const p = new PrismaClient(); console.log('✅ Runner: Prisma Runtime verified with native OpenSSL 3.0');"
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+# Push schema directly to database before starting API
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]
