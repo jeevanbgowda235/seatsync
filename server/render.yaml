@@ -1,12 +1,12 @@
 services:
   - type: web
     name: seatsync-backend
-    env: node
+    env: docker
     plan: free
     region: oregon
     rootDir: server
-    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run build
-    startCommand: npm run start
+    dockerfilePath: Dockerfile
+    dockerContext: .
     envVars:
       - key: NODE_ENV
         value: production

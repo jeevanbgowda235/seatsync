@@ -1,0 +1,12 @@
+node_modules
+client
+server/node_modules
+server/dist
+dist
+.env
+.env.*
+*.log
+.git
+.gitignore
+*.db
+*.db-journal
