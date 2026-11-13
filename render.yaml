@@ -17,9 +17,11 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CORS_ORIGIN
-        sync: false
+        value: https://seatsync-vjgetntqa-zap-i.vercel.app,https://seatsync.vercel.app
+      - key: CLIENT_URL
+        value: https://seatsync-vjgetntqa-zap-i.vercel.app
       - key: FRONTEND_URL
-        sync: false
+        value: https://seatsync-vjgetntqa-zap-i.vercel.app
       - key: DATABASE_URL
         sync: false
       - key: ADMIN_EMAIL

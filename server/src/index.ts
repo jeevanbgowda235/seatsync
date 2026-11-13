@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { config } from './config';
+import { config, normalizeOrigin } from './config';
 import prisma from './prisma/client';
 import authRoutes from './routes/auth';
 import seatRoutes from './routes/seats';
@@ -29,6 +29,8 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
+    const incoming = normalizeOrigin(origin);
+
     // In development mode, allow localhost and local IPs automatically
     if (!config.isProduction) {
       if (
@@ -39,26 +41,8 @@ const corsOptions: cors.CorsOptions = {
       }
     }
 
-    // Allow configured production frontend origins or wildcard if explicitly specified
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      return callback(null, true);
-    }
-
-    // Check wildcard subdomains (e.g. *.vercel.app)
-    const isMatched = allowedOrigins.some(pattern => {
-      if (pattern.startsWith('*.')) {
-        const base = pattern.slice(2);
-        try {
-          const url = new URL(origin);
-          return url.hostname.endsWith(base);
-        } catch {
-          return false;
-        }
-      }
-      return false;
-    });
-
-    if (isMatched) {
+    // Exact match against normalized allowed origins
+    if (incoming && allowedOrigins.includes(incoming)) {
       return callback(null, true);
     }
 
@@ -66,11 +50,23 @@ const corsOptions: cors.CorsOptions = {
     return callback(new Error(`CORS Blocked: Origin ${origin} not permitted by SeatSync security policy.`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

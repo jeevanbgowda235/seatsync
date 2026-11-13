@@ -84,6 +84,36 @@ async function runTests() {
   assert(calculateLateFine(due, onTime, 2.0) === 0, 'Zero fine for on-time return');
   assert(calculateLateFine(due, threeDaysLate, 2.0) === 6.0, 'Calculates exactly $6.00 fine for 3 days overdue ($2/day)');
 
+  console.log('\n--- 5. CORS ORIGIN NORMALIZATION & MATCHING TESTS ---');
+  const { normalizeOrigin, parseAllowedOrigins } = await import('../config');
+
+  assert(
+    normalizeOrigin('https://seatsync-vjgetntqa-zap-i.vercel.app/') === 'https://seatsync-vjgetntqa-zap-i.vercel.app',
+    'Normalizes URL by stripping trailing slash'
+  );
+  assert(
+    normalizeOrigin('https://seatsync-vjgetntqa-zap-i.vercel.app/dashboard?tab=seats') === 'https://seatsync-vjgetntqa-zap-i.vercel.app',
+    'Normalizes URL by stripping path and query string'
+  );
+  assert(
+    normalizeOrigin('SEATSYNC-VJGETNTQA-ZAP-I.VERCEL.APP') === 'https://seatsync-vjgetntqa-zap-i.vercel.app',
+    'Prepends protocol and lowercases uppercase domain'
+  );
+  assert(
+    normalizeOrigin('invalid://') === null,
+    'Rejects invalid protocol/origin'
+  );
+
+  const allowed = parseAllowedOrigins();
+  assert(
+    allowed.includes('https://seatsync-vjgetntqa-zap-i.vercel.app'),
+    'Default trusted production list includes https://seatsync-vjgetntqa-zap-i.vercel.app'
+  );
+  assert(
+    allowed.includes('https://seatsync.vercel.app'),
+    'Default trusted production list includes https://seatsync.vercel.app'
+  );
+
   console.log(`\n========================================`);
   console.log(`TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
   console.log(`========================================\n`);

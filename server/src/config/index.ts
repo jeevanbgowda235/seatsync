@@ -29,21 +29,75 @@ function resolveJwtSecret(): string {
   return envSecret || 'seatsync-development-jwt-secret-key-local-only';
 }
 
-// Parse CORS allowed origins from CORS_ORIGIN and FRONTEND_URL
-function parseAllowedOrigins(): string[] {
-  const rawOrigins = [
-    process.env.CORS_ORIGIN,
-    process.env.FRONTEND_URL
-  ].filter(Boolean).join(',');
+// Safely normalize an origin to protocol://host(:port)
+export function normalizeOrigin(input: string): string | null {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
 
-  if (!rawOrigins || rawOrigins.trim() === '') {
-    return isProduction ? [] : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
+  try {
+    // If it has a protocol scheme that is not http or https, reject it
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) {
+      if (!/^https?:\/\//i.test(trimmed)) {
+        return null;
+      }
+    }
+    const target = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const url = new URL(target);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    if (!url.hostname || url.hostname.length === 0) {
+      return null;
+    }
+    return `${url.protocol}//${url.host}`.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+// Parse CORS allowed origins from CORS_ORIGIN, CLIENT_URL, FRONTEND_URL, APP_URL
+export function parseAllowedOrigins(): string[] {
+  const envSources = [
+    process.env.CORS_ORIGIN,
+    process.env.CLIENT_URL,
+    process.env.FRONTEND_URL,
+    process.env.APP_URL
+  ].filter(Boolean) as string[];
+
+  const originsSet = new Set<string>();
+
+  // 1. Explicitly trusted production deployment origins
+  const trustedProductionOrigins = [
+    'https://seatsync-vjgetntqa-zap-i.vercel.app',
+    'https://seatsync.vercel.app'
+  ];
+
+  for (const origin of trustedProductionOrigins) {
+    const normalized = normalizeOrigin(origin);
+    if (normalized) originsSet.add(normalized);
   }
 
-  return rawOrigins
-    .split(',')
-    .map(origin => origin.trim())
-    .filter(origin => origin.length > 0);
+  // 2. Add origins from environment variables (comma or space separated)
+  for (const source of envSources) {
+    const parts = source.split(/[,\s]+/);
+    for (const part of parts) {
+      const normalized = normalizeOrigin(part);
+      if (normalized) {
+        originsSet.add(normalized);
+      }
+    }
+  }
+
+  // 3. In non-production, include standard local development origins
+  if (!isProduction) {
+    originsSet.add('http://localhost:3000');
+    originsSet.add('http://localhost:5173');
+    originsSet.add('http://127.0.0.1:3000');
+    originsSet.add('http://127.0.0.1:5173');
+  }
+
+  return Array.from(originsSet);
 }
 
 export const config = {
