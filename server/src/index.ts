@@ -169,34 +169,77 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Automatic Database Bootstrap on Startup
+// Automatic Database Bootstrap on Startup (Idempotent & Safe)
 async function bootstrapDatabase() {
   try {
+    // If DIRECT_URL is not set but DATABASE_URL uses Supabase pooler (port 6543),
+    // derive the direct session port (5432) so Prisma CLI commands don't fail against PgBouncer.
+    if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
+      if (process.env.DATABASE_URL.includes(':6543')) {
+        process.env.DIRECT_URL = process.env.DATABASE_URL
+          .replace(':6543', ':5432')
+          .replace('?pgbouncer=true', '')
+          .replace('&pgbouncer=true', '');
+        console.log('ℹ️ Auto-configured DIRECT_URL on port 5432 for Prisma migration compatibility.');
+      }
+    }
+
     console.log('📡 Verifying database connection...');
     await prisma.$connect();
-    console.log('✅ PostgreSQL connected.');
+    console.log('✅ PostgreSQL connected successfully.');
 
-    // 1. Verify if tables exist
+    // 1. Check if database tables already exist
+    let tablesExist = false;
     try {
       await prisma.user.findFirst();
-      console.log('✅ Schema tables verified.');
+      tablesExist = true;
+      console.log('✅ Schema tables verified. Skipping schema push.');
     } catch (tblErr: any) {
-      if (tblErr.code === 'P2021' || tblErr.message?.includes('does not exist') || tblErr.message?.includes('relation')) {
-        console.log('⚠️ PostgreSQL tables missing! Executing automated schema push...');
-        const { execSync } = await import('child_process');
+      if (
+        tblErr.code === 'P2021' ||
+        tblErr.message?.includes('does not exist') ||
+        tblErr.message?.includes('relation')
+      ) {
+        tablesExist = false;
+        console.log('⚠️ PostgreSQL tables missing! Executing one-time automated schema push...');
+      } else {
+        throw tblErr;
+      }
+    }
+
+    // Only run schema push if tables are missing
+    if (!tablesExist) {
+      const { execSync } = await import('child_process');
+      try {
         execSync('npx prisma db push --skip-generate --accept-data-loss', {
           stdio: 'inherit',
           env: process.env
         });
         console.log('✅ Database tables created via prisma db push.');
+      } catch (pushErr: any) {
+        console.warn('⚠️ Automated prisma db push encountered a non-fatal warning:', pushErr.message);
       }
     }
 
-    // 2. Ensure initial seed accounts exist
-    const { runSeed } = await import('./prisma/seed');
-    await runSeed();
+    // 2. Ensure initial demo accounts exist idempotently
+    try {
+      const demoStudent = await prisma.user.findUnique({
+        where: { email: 'alex.morgan@university.edu' }
+      });
+
+      if (!demoStudent) {
+        console.log('🌱 Demo student missing. Initializing demo accounts and inventory...');
+        const { runSeed } = await import('./prisma/seed');
+        await runSeed();
+      } else {
+        console.log('✅ Production data verified. Seeding skipped to preserve existing records.');
+      }
+    } catch (seedErr: any) {
+      console.warn('⚠️ Seed check non-fatal warning:', seedErr.message);
+    }
   } catch (err: any) {
-    console.error('❌ Database bootstrap error:', err.message);
+    console.error('❌ Database connection error on startup:', err.message);
+    console.warn('⚠️ Server running in degraded mode. Verify DATABASE_URL in Render dashboard.');
   }
 }
 

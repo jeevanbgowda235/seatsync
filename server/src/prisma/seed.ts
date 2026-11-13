@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import QRCode from 'qrcode';
-
-const prisma = new PrismaClient();
+import prisma from './client';
 
 export async function runSeed() {
   console.log('🌱 Starting SeatSync Database Seed (Idempotent Mode)...');

@@ -68,5 +68,5 @@ RUN node -e "const { PrismaClient } = require('@prisma/client'); const p = new P
 
 EXPOSE 5000
 
-# Push schema directly to database before starting API
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]
+# Start production server directly; schema initialization & idempotent seeding are handled safely on boot
+CMD ["node", "dist/index.js"]
