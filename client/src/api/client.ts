@@ -1,6 +1,28 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Resolve and normalize the API base URL
+function getApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  // If no environment variable is provided, default to relative '/api'
+  if (!envUrl) {
+    return '/api';
+  }
+
+  // Strip trailing slashes
+  const cleanUrl = envUrl.replace(/\/+$/, '');
+
+  // If provided URL already has /api at the end, use it
+  if (cleanUrl.endsWith('/api')) {
+    return cleanUrl;
+  }
+
+  // If provided URL is an absolute root URL without /api (e.g. https://seatsync-backend-dzxe.onrender.com),
+  // append /api for canonical REST route matching
+  return `${cleanUrl}/api`;
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

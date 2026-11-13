@@ -69,6 +69,7 @@ export function parseAllowedOrigins(): string[] {
 
   // 1. Explicitly trusted production deployment origins
   const trustedProductionOrigins = [
+    'https://seatsync-2gjspnwlj-zap-j.vercel.app',
     'https://seatsync-vjgetntqa-zap-i.vercel.app',
     'https://seatsync.vercel.app'
   ];

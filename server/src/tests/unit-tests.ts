@@ -106,6 +106,10 @@ async function runTests() {
 
   const allowed = parseAllowedOrigins();
   assert(
+    allowed.includes('https://seatsync-2gjspnwlj-zap-j.vercel.app'),
+    'Default trusted production list includes https://seatsync-2gjspnwlj-zap-j.vercel.app'
+  );
+  assert(
     allowed.includes('https://seatsync-vjgetntqa-zap-i.vercel.app'),
     'Default trusted production list includes https://seatsync-vjgetntqa-zap-i.vercel.app'
   );

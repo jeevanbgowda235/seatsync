@@ -46,6 +46,20 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
+    // Permit SeatSync deployments on Vercel over HTTPS
+    if (incoming) {
+      try {
+        const parsed = new URL(incoming);
+        if (
+          parsed.protocol === 'https:' &&
+          parsed.hostname.endsWith('.vercel.app') &&
+          parsed.hostname.startsWith('seatsync')
+        ) {
+          return callback(null, true);
+        }
+      } catch {}
+    }
+
     console.warn(`[CORS Blocked] Origin: ${origin}. Configured allowed: ${allowedOrigins.join(', ')}`);
     return callback(new Error(`CORS Blocked: Origin ${origin} not permitted by SeatSync security policy.`));
   },
@@ -71,8 +85,18 @@ app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health Check Endpoint with Database Diagnostic
-app.get('/api/health', async (_req: Request, res: Response) => {
+// Root endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.json({
+    service: 'SeatSync Library Management API',
+    status: 'online',
+    version: '1.0.0',
+    documentation: '/api/health'
+  });
+});
+
+// Health Check Endpoint with Database Diagnostic (supported on /api/health and /health)
+const healthHandler = async (_req: Request, res: Response) => {
   let dbStatus = 'disconnected';
   let userCount = 0;
   let seatCount = 0;
@@ -101,7 +125,10 @@ app.get('/api/health', async (_req: Request, res: Response) => {
     },
     version: '1.0.0'
   });
-});
+};
+
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
 
 // Explicit Database Setup / Synchronization Route
 app.post('/api/admin/bootstrap-db', async (_req: Request, res: Response): Promise<void> => {
@@ -132,14 +159,27 @@ app.post('/api/admin/bootstrap-db', async (_req: Request, res: Response): Promis
   }
 });
 
-// Mount API Routes
+// Mount API Routes (Support both /api/* and direct /* prefixes for seamless proxy/direct compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/seats', seatRoutes);
+app.use('/seats', seatRoutes);
+
 app.use('/api/reservations', reservationRoutes);
+app.use('/reservations', reservationRoutes);
+
 app.use('/api/books', bookRoutes);
+app.use('/books', bookRoutes);
+
 app.use('/api/borrow', borrowRoutes);
+app.use('/borrow', borrowRoutes);
+
 app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes);
+
 app.use('/api/notifications', notificationRoutes);
+app.use('/notifications', notificationRoutes);
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {
