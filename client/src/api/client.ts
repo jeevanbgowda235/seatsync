@@ -4,22 +4,22 @@ import axios from 'axios';
 function getApiBaseUrl(): string {
   const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
 
-  // If no environment variable is provided, default to relative '/api'
-  if (!envUrl) {
-    return '/api';
+  // If explicit environment variable is provided, use it
+  if (envUrl) {
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
 
-  // Strip trailing slashes
-  const cleanUrl = envUrl.replace(/\/+$/, '');
-
-  // If provided URL already has /api at the end, use it
-  if (cleanUrl.endsWith('/api')) {
-    return cleanUrl;
+  // If running in browser and on local machine, point to local dev server
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5000/api';
+    }
   }
 
-  // If provided URL is an absolute root URL without /api (e.g. https://seatsync-backend-dzxe.onrender.com),
-  // append /api for canonical REST route matching
-  return `${cleanUrl}/api`;
+  // Canonical production backend URL on Render (for Vercel deployments when env var is omitted)
+  return 'https://seatsync-backend-dzxe.onrender.com/api';
 }
 
 const API_BASE_URL = getApiBaseUrl();

@@ -15,41 +15,80 @@ export interface VerifiedGoogleUser {
 }
 
 /**
- * Cryptographically verifies a Google ID Token (JWT) using Google's public JWKS certificates.
- * Checks signature, issuer, audience, and expiration.
+ * Cryptographically verifies a Google Token (ID Token JWT or OAuth2 Access Token).
+ * Supports both Google Identity Services (GSI) ID tokens and OAuth2 token client access tokens.
+ * Verifies signature, issuer, audience/tokeninfo, expiration, and email_verified.
  */
-export async function verifyGoogleIdToken(idToken: string): Promise<VerifiedGoogleUser> {
-  if (!idToken || typeof idToken !== 'string') {
+export async function verifyGoogleToken(token: string): Promise<VerifiedGoogleUser> {
+  if (!token || typeof token !== 'string') {
     throw new Error('ID_TOKEN_REQUIRED');
   }
 
   const clientId = config.googleClientId;
 
-  try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: clientId ? clientId : undefined
-    });
+  // Case 1: JWT ID Token format (three segments separated by dots)
+  if (token.includes('.') && token.split('.').length === 3) {
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: clientId ? clientId : undefined
+      });
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new Error('INVALID_TOKEN_PAYLOAD');
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error('INVALID_TOKEN_PAYLOAD');
+      }
+
+      if (!payload.email) {
+        throw new Error('EMAIL_NOT_PROVIDED');
+      }
+
+      if (!payload.email_verified) {
+        throw new Error('EMAIL_NOT_VERIFIED');
+      }
+
+      return {
+        email: payload.email.toLowerCase().trim(),
+        name: payload.name || payload.email.split('@')[0],
+        avatarUrl: payload.picture,
+        googleId: payload.sub,
+        emailVerified: !!payload.email_verified
+      };
+    } catch (error: any) {
+      if (error.message === 'ID_TOKEN_REQUIRED' || error.message === 'INVALID_TOKEN_PAYLOAD' || error.message === 'EMAIL_NOT_PROVIDED' || error.message === 'EMAIL_NOT_VERIFIED') {
+        throw error;
+      }
+      throw new Error(`GOOGLE_TOKEN_VERIFICATION_FAILED: ${error.message}`);
     }
+  }
 
-    if (!payload.email) {
+  // Case 2: OAuth2 Access Token format (e.g. from initTokenClient popup flow)
+  try {
+    const tokenInfo = await client.getTokenInfo(token);
+    if (!tokenInfo.email) {
       throw new Error('EMAIL_NOT_PROVIDED');
     }
-
-    if (!payload.email_verified) {
+    if (!tokenInfo.email_verified) {
       throw new Error('EMAIL_NOT_VERIFIED');
     }
 
+    // Fetch user profile from official Google UserInfo endpoint
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google userinfo returned status ${response.status}`);
+    }
+
+    const userInfo: any = await response.json();
+
     return {
-      email: payload.email.toLowerCase().trim(),
-      name: payload.name || payload.email.split('@')[0],
-      avatarUrl: payload.picture,
-      googleId: payload.sub,
-      emailVerified: !!payload.email_verified
+      email: userInfo.email.toLowerCase().trim(),
+      name: userInfo.name || userInfo.email.split('@')[0],
+      avatarUrl: userInfo.picture,
+      googleId: userInfo.sub || tokenInfo.sub || '',
+      emailVerified: true
     };
   } catch (error: any) {
     if (error.message === 'ID_TOKEN_REQUIRED' || error.message === 'INVALID_TOKEN_PAYLOAD' || error.message === 'EMAIL_NOT_PROVIDED' || error.message === 'EMAIL_NOT_VERIFIED') {
@@ -58,6 +97,11 @@ export async function verifyGoogleIdToken(idToken: string): Promise<VerifiedGoog
     throw new Error(`GOOGLE_TOKEN_VERIFICATION_FAILED: ${error.message}`);
   }
 }
+
+/**
+ * Backwards-compatible alias for verifyGoogleToken
+ */
+export const verifyGoogleIdToken = verifyGoogleToken;
 
 /**
  * Generates official Google OAuth 2.0 authorization URL for redirect flow.

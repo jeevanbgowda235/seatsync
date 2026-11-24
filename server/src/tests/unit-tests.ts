@@ -231,6 +231,16 @@ async function runTests() {
   }
   assert(garbageTokenFailed, 'Google auth securely rejects invalid/fake ID tokens');
 
+  const { verifyGoogleToken } = await import('../utils/googleAuth');
+  let badAccessTokenFailed = false;
+  try {
+    await verifyGoogleToken('ya29.invalid-mock-access-token');
+  } catch (err: any) {
+    badAccessTokenFailed = true;
+    assert(err.message.includes('GOOGLE_TOKEN_VERIFICATION_FAILED'), 'Rejects forged OAuth2 access tokens securely');
+  }
+  assert(badAccessTokenFailed, 'Access token verification strictly blocks unauthorized tokens');
+
   console.log(`\n========================================`);
   console.log(`TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
   console.log(`========================================\n`);

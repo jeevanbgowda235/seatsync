@@ -6,7 +6,7 @@ import { z } from 'zod';
 import prisma from '../prisma/client';
 import { config } from '../config';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { verifyGoogleIdToken, getGoogleOAuthUrl, exchangeCodeForGoogleTokens } from '../utils/googleAuth';
+import { verifyGoogleToken, verifyGoogleIdToken, getGoogleOAuthUrl, exchangeCodeForGoogleTokens } from '../utils/googleAuth';
 
 const router = Router();
 
@@ -268,16 +268,16 @@ router.get('/google/status', (_req, res: Response): void => {
   });
 });
 
-// POST /api/auth/google - Authenticate using verified Google ID Token
+// POST /api/auth/google - Authenticate using verified Google Token (ID Token or Access Token)
 router.post('/google', async (req, res: Response): Promise<void> => {
   try {
-    const credential = req.body.credential || req.body.idToken || req.body.token;
+    const credential = req.body.credential || req.body.idToken || req.body.token || req.body.accessToken;
 
     if (!credential) {
       res.status(400).json({
         success: false,
         code: 'TOKEN_REQUIRED',
-        message: 'Google credential/ID token is required.'
+        message: 'Google credential/token is required.'
       });
       return;
     }
@@ -291,8 +291,8 @@ router.post('/google', async (req, res: Response): Promise<void> => {
       return;
     }
 
-    // Verify token cryptographically with Google's official public keys
-    const googleUser = await verifyGoogleIdToken(credential);
+    // Verify token cryptographically with Google's official endpoints
+    const googleUser = await verifyGoogleToken(credential);
 
     // Look for existing user by verified email
     let user = await prisma.user.findUnique({
