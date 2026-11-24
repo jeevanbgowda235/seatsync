@@ -117,6 +117,10 @@ async function runTests() {
     allowed.includes('https://seatsync.vercel.app'),
     'Default trusted production list includes https://seatsync.vercel.app'
   );
+  assert(
+    allowed.includes('http://localhost:5173'),
+    'Default trusted production list includes http://localhost:5173 for evaluation and local dev'
+  );
 
   console.log('\n--- 6. TIME VALIDATION & ASIA/KOLKATA TIMEZONE TESTS ---');
   const { getCurrentKolkataTime, validateReservationTime } = await import('../utils/timeValidation');
