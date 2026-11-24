@@ -130,6 +130,57 @@ const healthHandler = async (_req: Request, res: Response) => {
 app.get('/api/health', healthHandler);
 app.get('/health', healthHandler);
 
+// Public Library Overview / Stats Summary (accessible by students and patrons)
+const publicStatsHandler = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const [totalSeats, activeReservations, booksAgg, activeLoans, totalBooks] = await Promise.all([
+      prisma.seat.count({ where: { isActive: true } }),
+      prisma.reservation.count({
+        where: {
+          date: todayStr,
+          status: { in: ['CONFIRMED', 'CHECKED_IN'] }
+        }
+      }),
+      prisma.book.aggregate({
+        _sum: {
+          totalCopies: true,
+          availableCopies: true
+        }
+      }),
+      prisma.borrowingRecord.count({
+        where: { status: 'BORROWED' }
+      }),
+      prisma.book.count()
+    ]);
+
+    const occupiedSeats = activeReservations;
+    const availableSeats = Math.max(0, totalSeats - occupiedSeats);
+    const occupancyRate = totalSeats > 0 ? Math.round((occupiedSeats / totalSeats) * 100) : 0;
+
+    res.json({
+      success: true,
+      stats: {
+        totalSeats,
+        occupiedSeats,
+        availableSeats,
+        seatOccupancyRate: occupancyRate,
+        totalBooks,
+        totalCopies: booksAgg._sum.totalCopies || totalBooks,
+        availableCopies: booksAgg._sum.availableCopies || totalBooks,
+        activeLoans
+      }
+    });
+  } catch (err: any) {
+    console.error('Error fetching public stats:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch library stats' });
+  }
+};
+
+app.get('/api/stats/summary', publicStatsHandler);
+app.get('/stats/summary', publicStatsHandler);
+
 // Explicit Database Setup / Synchronization Route
 app.post('/api/admin/bootstrap-db', async (_req: Request, res: Response): Promise<void> => {
   try {

@@ -39,21 +39,24 @@ export const StudentDashboard: React.FC = () => {
 
   // Real or realistic library statistics for student view
   const [stats, setStats] = useState({
-    totalBooks: 3842,
-    availableBooks: 2976,
-    borrowedBooks: 866,
-    availableSeats: 120,
-    totalSeats: 160,
-    seatOccupancyPct: 75
+    totalBooks: 8,
+    availableBooks: 8,
+    borrowedBooks: 0,
+    availableSeats: 40,
+    totalSeats: 40,
+    seatOccupancyPct: 0
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [resRes, resBorrow, resStats] = await Promise.all([
+        const todayStr = new Date().toISOString().split('T')[0];
+        const [resRes, resBorrow, resStats, resSeats, resBooks] = await Promise.all([
           api.get('/reservations/my').catch(() => ({ data: { success: false, reservations: [] } })),
           api.get('/borrow/my-books').catch(() => ({ data: { success: false, records: [] } })),
-          api.get('/admin/stats').catch(() => ({ data: { success: false } }))
+          api.get('/stats/summary').catch(() => ({ data: { success: false } })),
+          api.get(`/seats?date=${todayStr}&startTime=08:00&endTime=20:00`).catch(() => ({ data: { success: false } })),
+          api.get('/books').catch(() => ({ data: { success: false } }))
         ]);
 
         if (resRes.data?.success && resRes.data.reservations) {
@@ -62,20 +65,42 @@ export const StudentDashboard: React.FC = () => {
         if (resBorrow.data?.success && resBorrow.data.records) {
           setBorrowedBooks(resBorrow.data.records);
         }
+
+        let totalSeats = 40;
+        let availableSeats = 40;
+        let occupiedSeats = 0;
+        let totalBooks = 8;
+        let availableBooks = 8;
+        let borrowedBooks = 0;
+
         if (resStats.data?.success && resStats.data.stats) {
           const s = resStats.data.stats;
-          const totalSeats = s.totalSeats || 160;
-          const availableSeats = s.availableSeats !== undefined ? s.availableSeats : 120;
-          const occPct = s.seatOccupancyRate || Math.round(((totalSeats - availableSeats) / totalSeats) * 100);
-          setStats({
-            totalBooks: s.totalCopies || 3842,
-            availableBooks: s.availableCopies || 2976,
-            borrowedBooks: s.activeLoans || 866,
-            availableSeats,
-            totalSeats,
-            seatOccupancyPct: occPct
-          });
+          totalSeats = s.totalSeats ?? 40;
+          availableSeats = s.availableSeats ?? totalSeats;
+          occupiedSeats = s.occupiedSeats ?? Math.max(0, totalSeats - availableSeats);
+          totalBooks = s.totalCopies ?? s.totalBooks ?? 8;
+          availableBooks = s.availableCopies ?? totalBooks;
+          borrowedBooks = s.activeLoans ?? 0;
+        } else if (resSeats.data?.success && resSeats.data.totalCount !== undefined) {
+          totalSeats = resSeats.data.totalCount;
+          availableSeats = resSeats.data.availableCount ?? totalSeats;
+          occupiedSeats = resSeats.data.reservedCount ?? Math.max(0, totalSeats - availableSeats);
         }
+
+        if (resBooks.data?.success && resBooks.data.pagination) {
+          totalBooks = resBooks.data.pagination.total ?? totalBooks;
+        }
+
+        const occPct = totalSeats > 0 ? Math.round((occupiedSeats / totalSeats) * 100) : 0;
+
+        setStats({
+          totalBooks,
+          availableBooks,
+          borrowedBooks,
+          availableSeats,
+          totalSeats,
+          seatOccupancyPct: occPct
+        });
       } catch (err) {
         console.error('Error loading dashboard data:', err);
       } finally {
@@ -100,12 +125,18 @@ export const StudentDashboard: React.FC = () => {
     { day: '24 Nov', count: 135 }
   ];
 
-  // Seat Occupancy Donut Chart Data
-  const occupiedCount = stats.totalSeats - stats.availableSeats;
-  const donutData = [
-    { name: 'Occupied', value: occupiedCount > 0 ? occupiedCount : 120, color: '#2563eb' },
-    { name: 'Available', value: stats.availableSeats > 0 ? stats.availableSeats : 40, color: '#38bdf8' }
-  ];
+  // Seat Occupancy Donut Chart Data (Calculated dynamically from real database state)
+  const occupiedCount = Math.max(0, stats.totalSeats - stats.availableSeats);
+  const availableCount = Math.max(0, stats.availableSeats);
+  const occupancyPct = stats.totalSeats > 0 ? Math.round((occupiedCount / stats.totalSeats) * 100) : 0;
+
+  // Donut chart segments: if 0 occupied, render whole ring as available
+  const donutData = occupiedCount === 0
+    ? [{ name: 'Available', value: availableCount > 0 ? availableCount : 40, color: '#38bdf8' }]
+    : [
+        { name: 'Occupied', value: occupiedCount, color: '#2563eb' },
+        { name: 'Available', value: availableCount, color: '#38bdf8' }
+      ];
 
   const displayName = user?.name ? user.name.split(' ')[0] : 'Student';
 
@@ -243,7 +274,7 @@ export const StudentDashboard: React.FC = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
-            {/* Center Label: 75% Occupied */}
+            {/* Center Label: Dynamic Occupancy */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-2xl font-extrabold text-slate-900 leading-none">
                 {stats.seatOccupancyPct}%
@@ -256,11 +287,11 @@ export const StudentDashboard: React.FC = () => {
           <div className="flex items-center justify-center space-x-6 text-xs font-semibold pt-2 border-t border-slate-100">
             <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-blue-600"></span>
-              <span className="text-slate-700">Occupied {occupiedCount > 0 ? occupiedCount : 120}</span>
+              <span className="text-slate-700">Occupied {occupiedCount}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-3 h-3 rounded-full bg-sky-400"></span>
-              <span className="text-slate-700">Available {stats.availableSeats > 0 ? stats.availableSeats : 40}</span>
+              <span className="text-slate-700">Available {availableCount}</span>
             </div>
           </div>
         </div>
