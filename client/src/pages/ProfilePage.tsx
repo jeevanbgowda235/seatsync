@@ -11,9 +11,10 @@ import {
   Lock,
   Armchair,
   BookMarked,
-  DollarSign
+  IndianRupee
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import DashboardLayout from '../components/DashboardLayout';
 import api from '../api/client';
 import { formatINR } from '../utils/formatters';
 
@@ -52,22 +53,12 @@ export const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header */}
-        <div className="pb-6 border-b border-slate-200">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-50 text-sky-600 text-xs font-semibold border border-sky-100 mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Patron Credentials</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            My Profile & Digital Library Pass
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage your personal academic details and view your verified library card number.
-          </p>
-        </div>
-
+    <DashboardLayout
+      variant="light"
+      title="Profile"
+      subtitle="Manage your personal academic details and view your digital library card"
+    >
+      <div className="max-w-4xl space-y-6">
         {feedback && (
           <div
             className={`p-4 rounded-2xl flex items-start space-x-3 text-xs ${
@@ -86,12 +77,12 @@ export const ProfilePage: React.FC = () => {
         )}
 
         {/* Digital Library Card Visual */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-navy-950 via-navy-900 to-navy-850 text-white p-7 sm:p-9 shadow-soft-lg border border-navy-850">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-navy-950 via-navy-900 to-navy-850 text-white p-7 sm:p-9 shadow-soft-lg border border-navy-800">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-navy-800 gap-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-accent-blue to-accent-cyan flex items-center justify-center text-white shadow-glow">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-glow">
                 <Armchair className="w-5 h-5" />
               </div>
               <div>
@@ -112,9 +103,9 @@ export const ProfilePage: React.FC = () => {
               <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
                 Patron Name
               </span>
-              <h3 className="text-2xl font-black text-white tracking-tight">{user?.name}</h3>
+              <h3 className="text-2xl font-black text-white tracking-tight">{user?.name || 'Jeevan B Gowda'}</h3>
               <p className="text-xs text-slate-300">
-                {user?.department} • Roll No / USN: <span className="font-mono text-sky-300 font-bold">{user?.studentId || '1NI22CS045'}</span>
+                {user?.department || 'Computer Science & Engineering'} • Roll No / USN: <span className="font-mono text-sky-300 font-bold">{user?.studentId || '1NI22CS045'}</span>
               </p>
             </div>
 
@@ -141,10 +132,10 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Profile Details Edit Form */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-soft-sm space-y-6">
+        <div className="glass-panel-light p-6 sm:p-8 space-y-6">
           <div className="pb-4 border-b border-slate-100">
             <h3 className="text-base font-bold text-slate-900">Personal Information</h3>
-            <p className="text-xs text-slate-500">Update your contact information and study year</p>
+            <p className="text-xs text-slate-500">Update your university contact details and year of study</p>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -156,7 +147,7 @@ export const ProfilePage: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
 
@@ -166,20 +157,20 @@ export const ProfilePage: React.FC = () => {
                   type="email"
                   disabled
                   value={user?.email || ''}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 cursor-not-allowed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number (+91)</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
 
@@ -190,7 +181,7 @@ export const ProfilePage: React.FC = () => {
                   value={formData.yearOfStudy}
                   onChange={(e) => setFormData({ ...formData, yearOfStudy: e.target.value })}
                   placeholder="e.g. 3rd Year"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
             </div>
@@ -201,7 +192,7 @@ export const ProfilePage: React.FC = () => {
                 type="text"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
 
@@ -209,7 +200,7 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="py-2.5 px-6 rounded-xl font-bold text-xs bg-navy-900 text-white hover:bg-navy-800 transition-colors shadow-soft-sm"
+                className="py-3 px-6 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-soft-sm"
               >
                 {saving ? 'Saving...' : 'Save Profile Changes'}
               </button>
@@ -217,7 +208,7 @@ export const ProfilePage: React.FC = () => {
           </form>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

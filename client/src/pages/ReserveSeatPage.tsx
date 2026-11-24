@@ -16,6 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import api from '../api/client';
+import DashboardLayout from '../components/DashboardLayout';
 import SeatMap from '../components/SeatMap';
 import { Seat, Reservation } from '../types';
 
@@ -130,24 +131,14 @@ export const ReserveSeatPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-200 gap-4">
-          <div>
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-50 text-sky-600 text-xs font-semibold border border-sky-100 mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Real-Time Seat Booking Engine</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Reserve Your Library Seat
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Select date, study window, floor and pick your dedicated desk.
-            </p>
-          </div>
-
-          {/* Floor Switcher Tabs */}
+    <DashboardLayout
+      variant="light"
+      title="Reserve a Seat"
+      subtitle="Interactive multi-floor seat map and quiet study zones"
+    >
+      <div className="space-y-6">
+        {/* Floor Switcher & Top Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-2 p-1.5 bg-slate-200/70 rounded-2xl">
             <button
               type="button"
@@ -158,7 +149,7 @@ export const ReserveSeatPage: React.FC = () => {
                   : 'text-slate-600 hover:text-navy-900'
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-sky-500" />
+              <Layers className="w-3.5 h-3.5 text-blue-500" />
               <span>Floor 1: Quiet & Collaborative</span>
             </button>
             <button
@@ -177,7 +168,7 @@ export const ReserveSeatPage: React.FC = () => {
         </div>
 
         {/* Date & Time Slot Control Bar */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-soft-sm space-y-6">
+        <div className="glass-panel-light p-6 space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
             {/* Date Picker */}
             <div className="space-y-2">
@@ -190,14 +181,14 @@ export const ReserveSeatPage: React.FC = () => {
                   min={todayStr}
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
                 <button
                   type="button"
                   onClick={() => setSelectedDate(todayStr)}
                   className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
                     selectedDate === todayStr
-                      ? 'bg-sky-50 text-sky-600 border-sky-300'
+                      ? 'bg-blue-50 text-blue-600 border-blue-300'
                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
@@ -221,8 +212,8 @@ export const ReserveSeatPage: React.FC = () => {
                       onClick={() => setSelectedSlot(slot)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
                         isSelected
-                          ? 'bg-navy-900 text-white border-navy-900 shadow-soft-sm scale-[1.02]'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-soft-sm scale-[1.02]'
+                          : 'bg-white/80 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
                       {slot.label}
@@ -243,7 +234,7 @@ export const ReserveSeatPage: React.FC = () => {
 
         {/* Seating Stage & Reservation Summary Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Floor Plan Seat Matrix (3 Columns) */}
+          {/* Floor Plan Seat Matrix (3 Columns) - COMPLETELY PRESERVED */}
           <div className="lg:col-span-3">
             <SeatMap
               seats={seats}
@@ -255,7 +246,7 @@ export const ReserveSeatPage: React.FC = () => {
 
           {/* Seat Details & Booking Action Sidebar (1 Column) */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-soft-sm sticky top-24 space-y-6">
+            <div className="glass-panel-light p-6 sticky top-24 space-y-6">
               <div className="pb-4 border-b border-slate-100">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Step 3</span>
                 <h3 className="text-base font-bold text-slate-900">Desk Confirmation</h3>
@@ -264,12 +255,12 @@ export const ReserveSeatPage: React.FC = () => {
               {selectedSeat ? (
                 <div className="space-y-4">
                   {/* Selected Seat Card */}
-                  <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 space-y-2">
+                  <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                         Floor {selectedSeat.floor}
                       </span>
-                      <span className="text-xs font-extrabold text-blue-600 bg-white px-2 py-0.5 rounded-full border border-sky-200">
+                      <span className="text-xs font-extrabold text-blue-600 bg-white px-2 py-0.5 rounded-full border border-blue-200">
                         Selected
                       </span>
                     </div>
@@ -298,31 +289,29 @@ export const ReserveSeatPage: React.FC = () => {
                       {selectedSeat.type === 'SILENT_BOOTH' && (
                         <div className="flex items-center space-x-2">
                           <VolumeX className="w-3.5 h-3.5 text-indigo-500" />
-                          <span>Acoustic Isolated Silent Pod</span>
+                          <span>Acoustic Silent Booth Isolation</span>
                         </div>
                       )}
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Ergonomic Mesh Chair & High-speed Wi-Fi</span>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Summary Details */}
+                  {/* Reservation Timing Details */}
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
                     <p>📅 <strong>Date:</strong> {selectedDate}</p>
                     <p>⏰ <strong>Slot:</strong> {selectedSlot.label}</p>
+                    <p className="text-[11px] text-slate-400 pt-1">
+                      *Desk reserved under your university library profile.
+                    </p>
                   </div>
 
-                  {/* Booking Button */}
                   <button
                     type="button"
                     disabled={bookingLoading}
                     onClick={handleConfirmReservation}
-                    className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-accent-blue to-accent-cyan text-white shadow-soft-md hover:shadow-glow hover:opacity-95 transition-all flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-soft-md hover:shadow-glow transition-all flex items-center justify-center space-x-2"
                   >
                     {bookingLoading ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
                         <CheckCircle2 className="w-4 h-4" />
@@ -332,78 +321,78 @@ export const ReserveSeatPage: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="py-10 text-center space-y-3">
+                <div className="py-12 text-center space-y-3">
                   <Armchair className="w-10 h-10 text-slate-300 mx-auto" />
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Please click an available green seat on the floor map to view details and reserve.
+                  <p className="text-xs text-slate-500 font-medium">
+                    No desk selected yet. Please click on any available green seat on the floor map.
                   </p>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Booking Success Modal */}
-      {confirmedReservation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl text-center space-y-5">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-soft-sm">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
+        {/* Booking Success Modal with QR Pass */}
+        {confirmedReservation && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+            <div className="glass-panel-light p-6 sm:p-8 max-w-md w-full border border-white shadow-2xl text-center space-y-5 bg-white/95">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-soft-sm">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
 
-            <div className="space-y-1">
-              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Seat Reserved!</h3>
-              <p className="text-xs text-slate-500">
-                Your study desk has been locked in the database with zero conflicts.
-              </p>
-            </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Seat Reserved!</h3>
+                <p className="text-xs text-slate-500">
+                  Your study desk has been locked in the database with zero conflicts.
+                </p>
+              </div>
 
-            {/* QR Pass Box */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                Digital Check-In Pass
-              </span>
-              <img
-                src={confirmedReservation.qrCodeData}
-                alt="Reservation Pass"
-                className="w-48 h-48 mx-auto rounded-xl shadow-inner border border-slate-200"
-              />
-              <p className="font-mono text-sm font-extrabold text-navy-900">
-                {confirmedReservation.reservationCode}
-              </p>
-            </div>
+              {/* QR Pass Box */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                  Digital Check-In Pass
+                </span>
+                <img
+                  src={confirmedReservation.qrCodeData}
+                  alt="Reservation Pass"
+                  className="w-48 h-48 mx-auto rounded-xl shadow-inner border border-slate-200"
+                />
+                <p className="font-mono text-sm font-extrabold text-navy-900">
+                  {confirmedReservation.reservationCode}
+                </p>
+              </div>
 
-            <div className="text-xs text-slate-600 space-y-1 bg-slate-50 p-3 rounded-xl text-left">
-              <p>🪑 <strong>Seat:</strong> {confirmedReservation.seat.seatNumber} ({confirmedReservation.seat.section})</p>
-              <p>📅 <strong>Date:</strong> {confirmedReservation.date}</p>
-              <p>⏰ <strong>Time:</strong> {confirmedReservation.startTime} – {confirmedReservation.endTime}</p>
-            </div>
+              <div className="text-xs text-slate-600 space-y-1 bg-slate-50 p-3 rounded-xl text-left">
+                <p>🪑 <strong>Seat:</strong> {confirmedReservation.seat.seatNumber} ({confirmedReservation.seat.section})</p>
+                <p>📅 <strong>Date:</strong> {confirmedReservation.date}</p>
+                <p>⏰ <strong>Time:</strong> {confirmedReservation.startTime} – {confirmedReservation.endTime}</p>
+              </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmedReservation(null);
-                  setSelectedSeat(null);
-                  fetchSeats();
-                }}
-                className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-              >
-                Book Another Seat
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/reservations')}
-                className="py-2.5 px-4 rounded-xl text-xs font-bold bg-navy-900 text-white hover:bg-navy-800 transition-colors"
-              >
-                My Reservations
-              </button>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmedReservation(null);
+                    setSelectedSeat(null);
+                    fetchSeats();
+                  }}
+                  className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                >
+                  Book Another
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/reservations')}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-soft-sm"
+                >
+                  My Passes
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 };
 

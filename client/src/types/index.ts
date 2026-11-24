@@ -56,8 +56,9 @@ export interface Reservation {
     id: string;
     name: string;
     email: string;
-    studentId: string;
-    department: string;
+    studentId?: string;
+    department?: string;
+    libraryCardNumber?: string;
   };
   checkIns?: Array<{
     id: string;
@@ -93,6 +94,7 @@ export interface Book {
   rating: number;
   category?: BookCategory;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type BorrowRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
@@ -112,8 +114,9 @@ export interface BorrowRequest {
     id: string;
     name: string;
     email: string;
-    studentId: string;
-    department: string;
+    studentId?: string;
+    department?: string;
+    libraryCardNumber?: string;
   };
 }
 
@@ -132,13 +135,15 @@ export interface BorrowingRecord {
   fineAmount: number;
   notes?: string;
   isOverdue?: boolean;
+  overdueDays?: number;
   book: Book;
   user?: {
     id: string;
     name: string;
     email: string;
-    studentId: string;
-    department: string;
+    studentId?: string;
+    department?: string;
+    libraryCardNumber?: string;
   };
 }
 

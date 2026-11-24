@@ -4,26 +4,125 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 tracking-tight;
+    @apply bg-slate-50 text-slate-800 tracking-tight antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 /* Custom smooth scroll and neat scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(148, 163, 184, 0.7);
 }
 
+/* ------------------------------------------------------------
+ * Glassmorphism Design System Styles
+ * ------------------------------------------------------------ */
+
+/* A. Light Glass Panel (Student Dashboard) */
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.glass-sidebar-light {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* B. Dark Glass Panel (Admin Dashboard) */
+.glass-panel-dark {
+  background: rgba(17, 24, 39, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.glass-sidebar-dark {
+  background: rgba(11, 16, 27, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* C. Lavender Glass Panel (Book Catalogue) */
+.glass-panel-lavender {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  box-shadow: 0 10px 32px rgba(139, 92, 246, 0.05);
+}
+
+.bg-lavender-mesh {
+  background-color: #f7f5fd;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(237, 233, 254, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(224, 231, 255, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(245, 243, 255, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(238, 242, 255, 0.8) 0px, transparent 50%);
+}
+
+/* D. Blue Gradient Glass (Authentication) */
+.bg-blue-auth-mesh {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 25%, #2563eb 50%, #38bdf8 100%);
+  position: relative;
+}
+
+.glass-card-auth {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 28px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.glass-input-dark {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.glass-input-dark:focus {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+/* Legacy helper classes */
 .glass-nav {
   background: rgba(11, 19, 43, 0.85);
   backdrop-filter: blur(12px);
@@ -38,3 +137,4 @@
 .gradient-hero {
   background: radial-gradient(circle at 50% 20%, #1c2541 0%, #0b132b 100%);
 }
+
