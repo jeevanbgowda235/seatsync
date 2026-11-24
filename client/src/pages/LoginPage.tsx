@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
                   className="py-2.5 px-3 rounded-xl text-xs font-bold bg-white text-blue-900 hover:bg-sky-50 shadow-soft-sm transition-all flex items-center justify-center space-x-1.5"
                 >
                   <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Student (Aarav)</span>
+                  <span>Student Demo</span>
                 </button>
                 <button
                   type="button"
@@ -122,7 +122,7 @@ export const LoginPage: React.FC = () => {
                   className="py-2.5 px-3 rounded-xl text-xs font-bold bg-navy-950/80 text-white hover:bg-navy-900 border border-white/20 transition-all flex items-center justify-center space-x-1.5"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Admin (Rajesh)</span>
+                  <span>Admin Demo</span>
                 </button>
               </div>
             </div>

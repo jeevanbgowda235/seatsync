@@ -103,7 +103,7 @@ export const ProfilePage: React.FC = () => {
               <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
                 Patron Name
               </span>
-              <h3 className="text-2xl font-black text-white tracking-tight">{user?.name || 'Aarav Sharma'}</h3>
+              <h3 className="text-2xl font-black text-white tracking-tight">{user?.name || 'Student Patron'}</h3>
               <p className="text-xs text-slate-300">
                 {user?.department || 'Computer Science & Engineering'} • Roll No / USN: <span className="font-mono text-sky-300 font-bold">{user?.studentId || '1NI22CS045'}</span>
               </p>
