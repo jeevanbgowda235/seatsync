@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
                   className="py-2.5 px-3 rounded-xl text-xs font-bold bg-white text-blue-900 hover:bg-sky-50 shadow-soft-sm transition-all flex items-center justify-center space-x-1.5"
                 >
                   <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Student (Jeevan)</span>
+                  <span>Student (Aarav)</span>
                 </button>
                 <button
                   type="button"

@@ -107,7 +107,7 @@ export const StudentDashboard: React.FC = () => {
     { name: 'Available', value: stats.availableSeats > 0 ? stats.availableSeats : 40, color: '#38bdf8' }
   ];
 
-  const displayName = user?.name ? user.name.split(' ')[0] : 'Jeevan';
+  const displayName = user?.name ? user.name.split(' ')[0] : 'Aarav';
 
   return (
     <DashboardLayout

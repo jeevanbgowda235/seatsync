@@ -100,9 +100,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     ? 'hover:bg-slate-800/60 hover:text-white transition-colors'
     : 'hover:bg-slate-100/80 hover:text-slate-900 transition-colors';
 
-  const displayName = user?.name || (isAdmin ? 'Dr. Rajesh Kumar' : 'Jeevan B Gowda');
+  const displayName = user?.name || (isAdmin ? 'Dr. Rajesh Kumar' : 'Aarav Sharma');
   const displayRole = user?.role === 'ADMIN' ? 'Administrator' : 'Student';
-  const initial = displayName.charAt(0).toUpperCase() || 'J';
+  const initial = displayName.charAt(0).toUpperCase() || 'A';
 
   return (
     <div className={`min-h-screen flex ${containerBg} antialiased`}>

@@ -72,9 +72,9 @@ Follow this guide to deploy **SeatSync** to public production infrastructure usi
 
 ## 3. STEP 2: DEPLOY BACKEND SERVICE ON RENDER
 
-1. Push your repository to GitHub: `https://github.com/jeevanbgowda235/seatsync`.
+1. Push your repository to GitHub: `https://github.com/<your-username>/seatsync`.
 2. In [Render Dashboard](https://dashboard.render.com), click **"New +"** $\rightarrow$ **"Web Service"**.
-3. Select your repository `jeevanbgowda235/seatsync`.
+3. Select your repository `<your-username>/seatsync`.
 4. Configure service parameters:
    - **Name:** `seatsync-api`
    - **Root Directory:** `server`
@@ -114,7 +114,7 @@ Follow this guide to deploy **SeatSync** to public production infrastructure usi
 ## 4. STEP 3: DEPLOY FRONTEND ON VERCEL
 
 1. Go to [Vercel](https://vercel.com) and click **"Add New Project"**.
-2. Import repository `jeevanbgowda235/seatsync`.
+2. Import repository `<your-username>/seatsync`.
 3. Configure project settings:
    - **Framework Preset:** `Vite`
    - **Root Directory:** `client`

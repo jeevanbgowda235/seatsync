@@ -288,7 +288,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-white">Reservation created</h4>
-                  <p className="text-[11px] text-slate-400">Seat B-07 by jeevan@seatsync.in</p>
+                  <p className="text-[11px] text-slate-400">Seat B-07 by aarav@seatsync.in</p>
                 </div>
               </div>
               <span className="text-[11px] font-semibold text-slate-500">09:32 AM</span>
