@@ -20,12 +20,31 @@ import DashboardLayout from '../components/DashboardLayout';
 import SeatMap from '../components/SeatMap';
 import { Seat, Reservation } from '../types';
 
+function getNowKolkata() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(new Date());
+  const map: Record<string, string> = {};
+  for (const p of parts) map[p.type] = p.value;
+  const hour = map.hour === '24' ? '00' : map.hour;
+  return {
+    dateStr: `${map.year}-${map.month}-${map.day}`,
+    timeStr: `${hour.padStart(2, '0')}:${map.minute.padStart(2, '0')}`
+  };
+}
+
 export const ReserveSeatPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Date management: default today
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  // Authoritative Asia/Kolkata date and time
+  const [serverTime, setServerTime] = useState<{ dateStr: string; timeStr: string }>(getNowKolkata());
 
   // Time slots
   const timeSlots = [
@@ -37,7 +56,56 @@ export const ReserveSeatPage: React.FC = () => {
     { start: '18:00', end: '20:00', label: '06:00 – 08:00 PM' },
     { start: '20:00', end: '22:00', label: '08:00 – 10:00 PM' }
   ];
-  const [selectedSlot, setSelectedSlot] = useState(timeSlots[1]); // default 10:00 - 12:00
+
+  const isSlotExpired = (slot: typeof timeSlots[0], date: string) => {
+    if (date < serverTime.dateStr) return true;
+    if (date === serverTime.dateStr) {
+      return slot.start <= serverTime.timeStr;
+    }
+    return false;
+  };
+
+  const getFirstValidSlot = (date: string) => {
+    return timeSlots.find(s => !isSlotExpired(s, date)) || timeSlots[0];
+  };
+
+  // Date management: default today in Asia/Kolkata
+  const todayStr = serverTime.dateStr;
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [selectedSlot, setSelectedSlot] = useState(getFirstValidSlot(todayStr));
+
+  // Sync with server clock on mount
+  useEffect(() => {
+    api.get('/reservations/current-time')
+      .then(res => {
+        if (res.data?.success) {
+          const updated = {
+            dateStr: res.data.date,
+            timeStr: res.data.time
+          };
+          setServerTime(updated);
+          // If current slot on today is expired, auto-select next valid slot
+          if (selectedDate === updated.dateStr) {
+            const firstValid = timeSlots.find(s => s.start > updated.timeStr);
+            if (firstValid) {
+              setSelectedSlot(firstValid);
+            }
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // When date changes, verify selected slot is valid for that date
+  const handleDateChange = (newDate: string) => {
+    if (newDate < todayStr) return; // Prevent selecting past date
+    setSelectedDate(newDate);
+    setErrorMessage(null);
+    if (isSlotExpired(selectedSlot, newDate)) {
+      const nextValid = getFirstValidSlot(newDate);
+      setSelectedSlot(nextValid);
+    }
+  };
 
   // Floor selection (1 or 2)
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
@@ -96,6 +164,11 @@ export const ReserveSeatPage: React.FC = () => {
 
   const handleConfirmReservation = async () => {
     if (!selectedSeat) return;
+
+    if (isSlotExpired(selectedSlot, selectedDate)) {
+      setErrorMessage(`Cannot reserve an expired time slot (${selectedSlot.label}). Please select an upcoming study window.`);
+      return;
+    }
 
     setBookingLoading(true);
     setErrorMessage(null);
@@ -180,12 +253,12 @@ export const ReserveSeatPage: React.FC = () => {
                   type="date"
                   min={todayStr}
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => handleDateChange(e.target.value)}
                   className="px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
                 <button
                   type="button"
-                  onClick={() => setSelectedDate(todayStr)}
+                  onClick={() => handleDateChange(todayStr)}
                   className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
                     selectedDate === todayStr
                       ? 'bg-blue-50 text-blue-600 border-blue-300'
@@ -199,30 +272,63 @@ export const ReserveSeatPage: React.FC = () => {
 
             {/* Time Slot Chips (2 cols) */}
             <div className="lg:col-span-2 space-y-2">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                2. Select Study Window (2-Hour Intervals)
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  2. Select Study Window (2-Hour Intervals)
+                </label>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  IST Time: <strong className="text-slate-800">{serverTime.timeStr}</strong>
+                </span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {timeSlots.map((slot) => {
+                  const expired = isSlotExpired(slot, selectedDate);
                   const isSelected = selectedSlot.start === slot.start && selectedSlot.end === slot.end;
                   return (
                     <button
                       key={slot.start}
                       type="button"
-                      onClick={() => setSelectedSlot(slot)}
+                      disabled={expired}
+                      onClick={() => {
+                        if (!expired) {
+                          setSelectedSlot(slot);
+                          setErrorMessage(null);
+                        }
+                      }}
+                      title={expired ? 'This time slot has already passed' : slot.label}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
-                        isSelected
+                        expired
+                          ? 'bg-slate-100/70 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                          : isSelected
                           ? 'bg-blue-600 text-white border-blue-600 shadow-soft-sm scale-[1.02]'
                           : 'bg-white/80 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      {slot.label}
+                      <span className={expired ? 'line-through' : ''}>{slot.label}</span>
+                      {expired && (
+                        <span className="ml-1.5 text-[9px] uppercase tracking-wider font-extrabold text-rose-500">
+                          (Past)
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
           </div>
+
+          {/* Alert if all study slots for today have ended */}
+          {selectedDate === todayStr && timeSlots.every((s) => isSlotExpired(s, selectedDate)) && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start space-x-3 text-amber-800 text-xs">
+              <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-bold">Library Study Hours for Today Have Concluded</p>
+                <p className="mt-0.5 text-amber-700">
+                  All study windows for today ({todayStr}) have ended (Current time: {serverTime.timeStr} IST). Please select tomorrow or an upcoming date to reserve a desk.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {errorMessage && (
@@ -306,12 +412,18 @@ export const ReserveSeatPage: React.FC = () => {
 
                   <button
                     type="button"
-                    disabled={bookingLoading}
+                    disabled={bookingLoading || isSlotExpired(selectedSlot, selectedDate)}
                     onClick={handleConfirmReservation}
-                    className="w-full py-3.5 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-soft-md hover:shadow-glow transition-all flex items-center justify-center space-x-2"
+                    className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+                      isSlotExpired(selectedSlot, selectedDate)
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-soft-md hover:shadow-glow'
+                    }`}
                   >
                     {bookingLoading ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : isSlotExpired(selectedSlot, selectedDate) ? (
+                      <span>Time Slot Expired</span>
                     ) : (
                       <>
                         <CheckCircle2 className="w-4 h-4" />

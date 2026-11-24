@@ -277,7 +277,7 @@ export const StudentDashboard: React.FC = () => {
             {/* Center Label: Dynamic Occupancy */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-2xl font-extrabold text-slate-900 leading-none">
-                {stats.seatOccupancyPct}%
+                {occupancyPct}%
               </span>
               <span className="text-[10px] text-slate-500 font-semibold mt-0.5">Occupied</span>
             </div>

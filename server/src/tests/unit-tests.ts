@@ -118,6 +118,115 @@ async function runTests() {
     'Default trusted production list includes https://seatsync.vercel.app'
   );
 
+  console.log('\n--- 6. TIME VALIDATION & ASIA/KOLKATA TIMEZONE TESTS ---');
+  const { getCurrentKolkataTime, validateReservationTime } = await import('../utils/timeValidation');
+
+  const kolkataNow = getCurrentKolkataTime();
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(kolkataNow.dateStr), `Kolkata date format is YYYY-MM-DD: ${kolkataNow.dateStr}`);
+  assert(/^\d{2}:\d{2}$/.test(kolkataNow.timeStr), `Kolkata time format is HH:MM: ${kolkataNow.timeStr}`);
+  assert(kolkataNow.hours >= 0 && kolkataNow.hours <= 23, `Kolkata hours within 0-23: ${kolkataNow.hours}`);
+  assert(kolkataNow.minutes >= 0 && kolkataNow.minutes <= 59, `Kolkata minutes within 0-59: ${kolkataNow.minutes}`);
+
+  // Test 6.1: Rejecting past dates
+  const pastDateRes = validateReservationTime('2020-01-01', '10:00', '12:00', kolkataNow);
+  assert(!pastDateRes.isValid && pastDateRes.errorCode === 'PAST_DATE', 'Rejects reservation on historic past date (2020-01-01)');
+
+  // Test 6.2: Rejecting yesterday
+  const yesterdayDate = new Date(Date.now() - 86400000);
+  const yesterdayKolkata = getCurrentKolkataTime(yesterdayDate);
+  const yesterdayRes = validateReservationTime(yesterdayKolkata.dateStr, '10:00', '12:00', kolkataNow);
+  assert(!yesterdayRes.isValid && yesterdayRes.errorCode === 'PAST_DATE', 'Rejects reservation for yesterday');
+
+  // Test 6.3: Rejecting expired slot today
+  // Mock current server time as today at 14:30 (totalMinutes = 870)
+  const mockServerAfternoon = {
+    dateStr: '2026-11-24',
+    timeStr: '14:30',
+    hours: 14,
+    minutes: 30,
+    totalMinutes: 870
+  };
+  const morningSlotRes = validateReservationTime('2026-11-24', '09:00', '11:00', mockServerAfternoon);
+  assert(
+    !morningSlotRes.isValid && morningSlotRes.errorCode === 'EXPIRED_TIME_SLOT',
+    'Rejects expired morning slot (09:00-11:00) when server time is afternoon (14:30)'
+  );
+
+  // Test 6.4: Rejecting slot when start time is in past even if end time is in future
+  const partiallyPastSlotRes = validateReservationTime('2026-11-24', '14:00', '16:00', mockServerAfternoon);
+  assert(
+    !partiallyPastSlotRes.isValid && partiallyPastSlotRes.errorCode === 'EXPIRED_TIME_SLOT',
+    'Rejects slot (14:00-16:00) whose start time has already passed (at 14:30)'
+  );
+
+  // Test 6.5: Accepting future slot today if within operating hours
+  const futureTodayRes = validateReservationTime('2026-11-24', '16:00', '18:00', mockServerAfternoon);
+  assert(futureTodayRes.isValid, 'Accepts valid future slot today (16:00-18:00 at 14:30)');
+
+  // Test 6.6: Accepting tomorrow's slot within operating hours
+  const tomorrowRes = validateReservationTime('2026-11-25', '10:00', '12:00', mockServerAfternoon);
+  assert(tomorrowRes.isValid, 'Accepts valid reservation for tomorrow (2026-11-25 10:00-12:00)');
+
+  // Test 6.7: Rejecting slots outside library operating hours (library open 08:00 to 22:00)
+  const tooEarlyRes = validateReservationTime('2026-11-25', '06:00', '08:00', mockServerAfternoon);
+  assert(
+    !tooEarlyRes.isValid && tooEarlyRes.errorCode === 'OUTSIDE_OPERATING_HOURS',
+    'Rejects reservation earlier than opening hour (06:00-08:00 vs 08:00 open)'
+  );
+
+  const tooLateRes = validateReservationTime('2026-11-25', '22:00', '23:30', mockServerAfternoon);
+  assert(
+    !tooLateRes.isValid && tooLateRes.errorCode === 'OUTSIDE_OPERATING_HOURS',
+    'Rejects reservation beyond closing hour (22:00-23:30 vs 22:00 close)'
+  );
+
+  // Test 6.8: Rejecting inverted time range (end <= start)
+  const invertedRes = validateReservationTime('2026-11-25', '14:00', '12:00', mockServerAfternoon);
+  assert(
+    !invertedRes.isValid && invertedRes.errorCode === 'INVALID_TIME_RANGE',
+    'Rejects inverted time range (14:00 to 12:00)'
+  );
+  const equalRes = validateReservationTime('2026-11-25', '14:00', '14:00', mockServerAfternoon);
+  assert(
+    !equalRes.isValid && equalRes.errorCode === 'INVALID_TIME_RANGE',
+    'Rejects zero-duration time range (14:00 to 14:00)'
+  );
+
+  // Test 6.9: Rejecting malformed date or time formats
+  const badFormatRes = validateReservationTime('25-11-2026', '10:00', '12:00', mockServerAfternoon);
+  assert(
+    !badFormatRes.isValid && badFormatRes.errorCode === 'INVALID_DATE_FORMAT',
+    'Rejects non-YYYY-MM-DD date format'
+  );
+
+  console.log('\n--- 7. GOOGLE OAUTH SECURITY & INTEGRATION TESTS ---');
+  const { verifyGoogleIdToken, isGoogleConfigured, getGoogleOAuthUrl } = await import('../utils/googleAuth');
+
+  const configured = isGoogleConfigured();
+  assert(typeof configured === 'boolean', 'Google auth configuration exposes boolean status');
+
+  const oauthUrl = getGoogleOAuthUrl('https://seatsync.vercel.app/auth/callback', 'test-state-123');
+  assert(oauthUrl.startsWith('https://accounts.google.com/o/oauth2/v2/auth'), 'Constructs valid Google OAuth 2.0 authorization endpoint URL');
+  assert(oauthUrl.includes('redirect_uri=https'), 'OAuth URL includes encoded redirect_uri parameter');
+
+  let emptyTokenFailed = false;
+  try {
+    await verifyGoogleIdToken('');
+  } catch (err: any) {
+    emptyTokenFailed = true;
+    assert(err.message === 'ID_TOKEN_REQUIRED', 'Google auth strictly rejects empty/missing token');
+  }
+  assert(emptyTokenFailed, 'Rejects verification of empty ID token');
+
+  let garbageTokenFailed = false;
+  try {
+    await verifyGoogleIdToken('definitely-not-a-valid-google-jwt-token');
+  } catch (err: any) {
+    garbageTokenFailed = true;
+    assert(err.message.includes('GOOGLE_TOKEN_VERIFICATION_FAILED'), 'Google auth captures and reports token verification failure securely');
+  }
+  assert(garbageTokenFailed, 'Google auth securely rejects invalid/fake ID tokens');
+
   console.log(`\n========================================`);
   console.log(`TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
   console.log(`========================================\n`);

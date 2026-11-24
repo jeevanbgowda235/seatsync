@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -10,12 +10,21 @@ import {
   ShieldCheck,
   UserCheck,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 export const LoginPage: React.FC = () => {
-  const { login, loginAsDemoStudent, loginAsDemoAdmin } = useAuth();
+  const { login, loginWithGoogle, loginAsDemoStudent, loginAsDemoAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -24,6 +33,89 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Google OAuth state
+  const [googleClientId, setGoogleClientId] = useState<string>(
+    (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  );
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+
+  useEffect(() => {
+    // If not in env, check server status
+    if (!googleClientId) {
+      api.get('/auth/google/status')
+        .then(res => {
+          if (res.data?.success && res.data.clientId) {
+            setGoogleClientId(res.data.clientId);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [googleClientId]);
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    if (!googleClientId) return;
+
+    const initializeGoogle = () => {
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+        } catch (err) {
+          console.warn('Google GSI initialize error:', err);
+        }
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogle();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.body.appendChild(script);
+    }
+  }, [googleClientId]);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    if (!response?.credential) {
+      setError('No credential received from Google.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      await loginWithGoogle(response.credential);
+      const userRaw = localStorage.getItem('seatsync_user');
+      const user = userRaw ? JSON.parse(userRaw) : null;
+      if (user?.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Google login failed:', err);
+      setError(err.response?.data?.message || 'Google authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleClick = () => {
+    if (googleClientId && window.google?.accounts?.id) {
+      window.google.accounts.id.prompt();
+    } else {
+      setShowGoogleModal(true);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,7 +326,8 @@ export const LoginPage: React.FC = () => {
               {/* Continue with Google */}
               <button
                 type="button"
-                onClick={handleDemoStudent}
+                disabled={loading}
+                onClick={handleGoogleClick}
                 className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-soft-sm transition-all flex items-center justify-center space-x-2.5"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -271,6 +364,62 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Google Setup Guide Modal (Displayed when Google credentials need to be configured) */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="glass-panel-light p-6 sm:p-8 max-w-lg w-full border border-white shadow-2xl space-y-4 bg-white/95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Google OAuth Setup Guide</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              To enable <strong>Continue with Google</strong>, configure your Google Cloud OAuth 2.0 Web Client credentials in your environment files:
+            </p>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2 font-mono">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-sans font-bold uppercase">1. Server Environment (server/.env)</span>
+                <span className="text-blue-700">GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com</span>
+                <br />
+                <span className="text-blue-700">GOOGLE_CLIENT_SECRET=your-client-secret</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200">
+                <span className="text-[10px] text-slate-400 block font-sans font-bold uppercase">2. Client Environment (client/.env)</span>
+                <span className="text-blue-700">VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com</span>
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-600 space-y-1 bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+              <p className="font-bold text-blue-900">In Google Cloud Console:</p>
+              <p>• <strong>Authorized JavaScript Origins:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono text-[11px]">{window.location.origin}</code></p>
+              <p>• <strong>Authorized Redirect URIs:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono text-[11px]">{window.location.origin}/login</code></p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-soft-sm"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,8 +3,22 @@ import { z } from 'zod';
 import QRCode from 'qrcode';
 import prisma from '../prisma/client';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
+import { validateReservationTime, getCurrentKolkataTime } from '../utils/timeValidation';
 
 const router = Router();
+
+// GET /api/reservations/current-time - Authoritative server time in Asia/Kolkata
+router.get('/current-time', (_req, res: Response): void => {
+  const serverTime = getCurrentKolkataTime();
+  res.json({
+    success: true,
+    timezone: 'Asia/Kolkata',
+    date: serverTime.dateStr,
+    time: serverTime.timeStr,
+    hours: serverTime.hours,
+    minutes: serverTime.minutes
+  });
+});
 
 const createReservationSchema = z.object({
   seatId: z.string().min(1, 'Seat ID is required'),
@@ -20,9 +34,14 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
     const validated = createReservationSchema.parse(req.body);
     const userId = req.user!.id;
 
-    // Validate times
-    if (validated.startTime >= validated.endTime) {
-      res.status(400).json({ success: false, message: 'End time must be after start time' });
+    // 1. Authoritative Asia/Kolkata Time Validation (Reject past dates, expired slots, invalid intervals)
+    const timeValidation = validateReservationTime(validated.date, validated.startTime, validated.endTime);
+    if (!timeValidation.isValid) {
+      res.status(400).json({
+        success: false,
+        code: timeValidation.errorCode,
+        message: timeValidation.errorMessage
+      });
       return;
     }
 
@@ -35,6 +54,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
         await tx.$executeRaw`SELECT id FROM "Seat" WHERE id = ${validated.seatId} FOR UPDATE`;
       } catch (_lockError) {
         // Fallback if provider doesn't support FOR UPDATE (e.g., in-memory mock or unit tests)
+      }
+
+      // Re-verify time immediately before database insertion to prevent race conditions
+      const txTimeValidation = validateReservationTime(validated.date, validated.startTime, validated.endTime);
+      if (!txTimeValidation.isValid) {
+        throw new Error(txTimeValidation.errorCode || 'INVALID_RESERVATION_TIME');
       }
 
       // 2. Verify seat exists and is active
@@ -147,6 +172,19 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ success: false, message: error.errors[0].message });
+      return;
+    }
+
+    if (
+      error.message === 'PAST_DATE' ||
+      error.message === 'EXPIRED_TIME_SLOT' ||
+      error.message === 'OUTSIDE_OPERATING_HOURS' ||
+      error.message === 'INVALID_TIME_RANGE' ||
+      error.message === 'INVALID_START_TIME' ||
+      error.message === 'INVALID_END_TIME' ||
+      error.message === 'INVALID_DATE_FORMAT'
+    ) {
+      res.status(400).json({ success: false, code: error.message, message: `Reservation time validation failed: ${error.message}` });
       return;
     }
 

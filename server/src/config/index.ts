@@ -113,6 +113,8 @@ export const config = {
   adminInitialEmail: process.env.ADMIN_EMAIL || 'admin@seatsync.edu',
   adminInitialPassword: process.env.ADMIN_INITIAL_PASSWORD,
   seedDemoData: process.env.SEED_DEMO_DATA === 'true' || !isProduction,
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   libraryConfig: {
     openingHour: 8, // 08:00 AM IST
     closingHour: 22, // 10:00 PM IST
